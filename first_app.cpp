@@ -29,12 +29,18 @@ std::vector<lve::LveModel::Vertex> shierpinsk(uint iter, std::vector<lve::LveMod
 	std::vector<lve::LveModel::Vertex> t1;
 	std::vector<lve::LveModel::Vertex> t2;
 	std::vector<lve::LveModel::Vertex> t3;
+	D.color = {0.0f, 1.0f, 0.0f};
+	E.color = {0.0f, 0.0f, 1.0f};
 	t1.push_back(A);
 	t1.push_back(D);
 	t1.push_back(E);
+	D.color = {1.0f, 0.0f, 0.0f};
+	F.color = {0.0f, 0.0f, 1.0f};
 	t2.push_back(D);
 	t2.push_back(B);
 	t2.push_back(F);
+	E.color = {1.0f, 0.0f, 0.0f};
+	F.color = {0.0f, 1.0f, 0.0f};
 	t3.push_back(E);
 	t3.push_back(F);
 	t3.push_back(C);
@@ -79,10 +85,10 @@ namespace lve {
 	}
 
 	void FirstApp::loadModels() {
-		std::vector<LveModel::Vertex> vertices = shierpinsk(9, {
-			{{  0.0f,  -0.5f}},
-			{{ -0.5f,   0.5f}},
-			{{  0.5f,   0.5f}}
+		std::vector<LveModel::Vertex> vertices = shierpinsk(4, {
+			{{  0.0f,  -0.5f}, {1.0f, 0.0f, 0.0f}},
+			{{ -0.5f,   0.5f}, {0.0f, 1.0f, 0.0f}},
+			{{  0.5f,   0.5f}, {0.0f, 0.0f, 1.0f}}
 		});
 
 		lveModel = std::make_unique<LveModel>(lveDevice, vertices);
