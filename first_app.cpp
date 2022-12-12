@@ -11,6 +11,48 @@
 
 #include <stdexcept>
 
+std::vector<lve::LveModel::Vertex> shierpinsk(uint iter, std::vector<lve::LveModel::Vertex> inicial) {
+	if (iter == 0) return inicial;
+	lve::LveModel::Vertex A = inicial[0];
+	lve::LveModel::Vertex B = inicial[1];
+	lve::LveModel::Vertex C = inicial[2];
+	lve::LveModel::Vertex D;
+	lve::LveModel::Vertex E;
+	lve::LveModel::Vertex F;
+	D.position = (A.position+B.position);
+	E.position = (A.position+C.position);
+	F.position = (C.position+B.position);
+	D.position /=2;
+	E.position /=2;
+	F.position /=2;
+
+	std::vector<lve::LveModel::Vertex> t1;
+	std::vector<lve::LveModel::Vertex> t2;
+	std::vector<lve::LveModel::Vertex> t3;
+	t1.push_back(A);
+	t1.push_back(D);
+	t1.push_back(E);
+	t2.push_back(D);
+	t2.push_back(B);
+	t2.push_back(F);
+	t3.push_back(E);
+	t3.push_back(F);
+	t3.push_back(C);
+
+
+	std::vector<lve::LveModel::Vertex> ret;
+	iter--;
+	t1 = shierpinsk(iter, t1);
+	t2 = shierpinsk(iter, t2);
+	t3 = shierpinsk(iter, t3);
+	ret.insert( ret.end(), t1.begin(), t1.end() );
+	ret.insert( ret.end(), t2.begin(), t2.end() );
+	ret.insert( ret.end(), t3.begin(), t3.end() );
+
+	return ret;
+
+}
+
 namespace lve {
 
 	FirstApp::FirstApp(){
@@ -25,8 +67,10 @@ namespace lve {
 	}
 
 	void FirstApp::run() {
+		uint cont = 0;
 
 		while (!lveWindow.shouldClose()){
+			cont ++;
 			glfwPollEvents();
 			drawFrame();
 		}
@@ -35,17 +79,11 @@ namespace lve {
 	}
 
 	void FirstApp::loadModels() {
-		std::vector<LveModel::Vertex> vertices {
+		std::vector<LveModel::Vertex> vertices = shierpinsk(9, {
 			{{  0.0f,  -0.5f}},
-			{{ -0.25f,  0.0f}},
-			{{  0.25f,  0.0f}},
-			{{ -0.25f,  0.0f}},
 			{{ -0.5f,   0.5f}},
-			{{  0.0f,   0.5f}},
-			{{  0.25f,  0.0f}},
-			{{  0.0f,   0.5f}},
 			{{  0.5f,   0.5f}}
-		};
+		});
 
 		lveModel = std::make_unique<LveModel>(lveDevice, vertices);
 	}
