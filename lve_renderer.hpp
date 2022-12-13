@@ -25,13 +25,18 @@ namespace lve {
 
 			VkCommandBuffer getCurrentCommandBuffert() const { 
 				assert(isFrameStarted && "Cannot get command buffer when frame not in progress");
-				return commandBuffers[currentImageIndex];
+				return commandBuffers[currentFrameIndex];
+			}
+
+			int getFrameIndex() const {
+				assert(isFrameStarted && "Cannot get frame index when frame not in progress");
+				return currentFrameIndex;
 			}
 
 			VkCommandBuffer beginFrame();
 			void endFrame();
-			void beginSwapChainRenmderPass(VkCommandBuffer commandBuffer);
-			void endSwapChainRenmderPass(VkCommandBuffer commandBuffer);
+			void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+			void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
 		private:
 			void createCommandBuffers();
@@ -44,6 +49,7 @@ namespace lve {
 			std::vector<VkCommandBuffer> commandBuffers;
 
 			uint32_t currentImageIndex;
+			int currentFrameIndex;
 			bool isFrameStarted;
 
 	};
