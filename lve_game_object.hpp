@@ -21,8 +21,15 @@ namespace lve {
 		}
 	};
 
+	struct RigidBody2dComponent {
+		glm::vec2 velocity;
+		float mass{1.0f};
+	};
+
 	class LveGameObject {
-		public:
+		public:	
+			RigidBody2dComponent rigidBody2d;
+			
 			using id_t = unsigned int;
 
 			static LveGameObject createGameObject() {

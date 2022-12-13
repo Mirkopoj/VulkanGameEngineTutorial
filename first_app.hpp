@@ -25,7 +25,7 @@ namespace lve {
 			void run();
 
 		private:
-			void loadGameOjects();
+			void loadGameObjects();
 
 			LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
 			LveDevice lveDevice{lveWindow};

@@ -1,134 +1,226 @@
 #include "first_app.hpp"
+
 #include "simple_render_system.hpp"
 
-#include "lve_game_object.hpp"
-#include "lve_model.hpp"
-#include "lve_swap_chain.hpp"
-#include <GLFW/glfw3.h>
-#include <cstdint>
-#include <memory>
-#include <sys/types.h>
-#include <vector>
-#include <vulkan/vulkan_core.h>
-
+// libs
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
+// std
 #include <array>
 #include <cassert>
 #include <stdexcept>
 
-std::vector<lve::LveModel::Vertex> shierpinsk(uint iter, std::vector<lve::LveModel::Vertex> inicial) {
-	if (iter == 0) return inicial;
-	lve::LveModel::Vertex A = inicial[0];
-	lve::LveModel::Vertex B = inicial[1];
-	lve::LveModel::Vertex C = inicial[2];
-	lve::LveModel::Vertex D;
-	lve::LveModel::Vertex E;
-	lve::LveModel::Vertex F;
-	D.position = (A.position+B.position);
-	E.position = (A.position+C.position);
-	F.position = (C.position+B.position);
-	D.position /=2;
-	E.position /=2;
-	F.position /=2;
-
-	std::vector<lve::LveModel::Vertex> t1;
-	std::vector<lve::LveModel::Vertex> t2;
-	std::vector<lve::LveModel::Vertex> t3;
-	D.color = {0.0f, 1.0f, 0.0f};
-	E.color = {0.0f, 0.0f, 1.0f};
-	t1.push_back(A);
-	t1.push_back(D);
-	t1.push_back(E);
-	D.color = {1.0f, 0.0f, 0.0f};
-	F.color = {0.0f, 0.0f, 1.0f};
-	t2.push_back(D);
-	t2.push_back(B);
-	t2.push_back(F);
-	E.color = {1.0f, 0.0f, 0.0f};
-	F.color = {0.0f, 1.0f, 0.0f};
-	t3.push_back(E);
-	t3.push_back(F);
-	t3.push_back(C);
-
-
-	std::vector<lve::LveModel::Vertex> ret;
-	iter--;
-	t1 = shierpinsk(iter, t1);
-	t2 = shierpinsk(iter, t2);
-	t3 = shierpinsk(iter, t3);
-	ret.insert( ret.end(), t1.begin(), t1.end() );
-	ret.insert( ret.end(), t2.begin(), t2.end() );
-	ret.insert( ret.end(), t3.begin(), t3.end() );
-
-	return ret;
-
-}
-
 namespace lve {
 
-	FirstApp::FirstApp(){
-		loadGameOjects();
-	}
+// Note: also would need to add RigidBody2dComponent to game object
+// struct RigidBody2dComponent {
+//   glm::vec2 velocity;
+//   float mass{1.0f};
+// };
 
-	FirstApp::~FirstApp(){ }
+class GravityPhysicsSystem {
+ public:
+  GravityPhysicsSystem(float strength) : strengthGravity{strength} {}
 
-	void FirstApp::run() {
-		SimpleRenderSystem simpleRenderSystem{lveDevice, lveRenderer.getSwapChainRenderPass()};
+  const float strengthGravity;
 
-		while (!lveWindow.shouldClose()){
-			glfwPollEvents();
+  // dt stands for delta time, and specifies the amount of time to advance the simulation
+  // substeps is how many intervals to divide the forward time step in. More substeps result in a
+  // more stable simulation, but takes longer to compute
+  void update(std::vector<LveGameObject>& objs, float dt, unsigned int substeps = 1) {
+    const float stepDelta = dt / substeps;
+    for (int i = 0; i < substeps; i++) {
+      stepSimulation(objs, stepDelta);
+    }
+  }
 
-			if (auto commandBuffer = lveRenderer.beginFrame()){
-				lveRenderer.beginSwapChainRenderPass(commandBuffer);
-				simpleRenderSystem.renderGameObjects(commandBuffer, gameObjects);
-				lveRenderer.endSwapChainRenderPass(commandBuffer);
-				lveRenderer.endFrame();
-			}
-		}
+  glm::vec2 computeForce(LveGameObject& fromObj, LveGameObject& toObj) const {
+    auto offset = fromObj.transform2d.translation - toObj.transform2d.translation;
+    float distanceSquared = glm::dot(offset, offset);
 
-		vkDeviceWaitIdle(lveDevice.device());
-	}
+    // clown town - just going to return 0 if objects are too close together...
+    if (glm::abs(distanceSquared) < 1e-10f) {
+      return {.0f, .0f};
+    }
 
-	void FirstApp::loadGameOjects() {
-		std::vector<LveModel::Vertex> vertices = shierpinsk(4, {
-			{{  0.0f,  -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{ -0.5f,   0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{  0.5f,   0.5f}, {0.0f, 0.0f, 1.0f}}
-		});
+    float force =
+        strengthGravity * toObj.rigidBody2d.mass * fromObj.rigidBody2d.mass / distanceSquared;
+    return force * offset / glm::sqrt(distanceSquared);
+  }
 
-		auto lveModel = std::make_shared<LveModel>(lveDevice, vertices);
+ private:
+  void stepSimulation(std::vector<LveGameObject>& physicsObjs, float dt) {
+    // Loops through all pairs of objects and applies attractive force between them
+    for (auto iterA = physicsObjs.begin(); iterA != physicsObjs.end(); ++iterA) {
+      auto& objA = *iterA;
+      for (auto iterB = iterA; iterB != physicsObjs.end(); ++iterB) {
+        if (iterA == iterB) continue;
+        auto& objB = *iterB;
 
-		/*auto triangle = LveGameObject::crateGameObject();
-		triangle.model = lveModel;
-		triangle.color = {.1f, .8f, .1f};
-		triangle.transform2d.translation.x = .2f;
-		triangle.transform2d.scale = {2.f, .5f};
-		triangle.transform2d.rotation = .25f * glm::two_pi<float>();
+        auto force = computeForce(objA, objB);
+        objA.rigidBody2d.velocity += dt * -force / objA.rigidBody2d.mass;
+        objB.rigidBody2d.velocity += dt * force / objB.rigidBody2d.mass;
+      }
+    }
 
-		gameObjects.push_back(std::move(triangle));*/
+    // update each objects position based on its final velocity
+    for (auto& obj : physicsObjs) {
+      obj.transform2d.translation += dt * obj.rigidBody2d.velocity;
+    }
+  }
+};
 
-		std::vector<glm::vec3> colors{
-				{1.f, .7f, .73f},
-				{1.f, .87f, .73f},
-				{1.f, 1.f, .73f},
-				{.73f, 1.f, .8f},
-				{.73, .88f, 1.f}  //
-			};
-		for (auto& color : colors) {
-			color = glm::pow(color, glm::vec3{2.2f});
-		}
-		for (int i = 0; i < 40; i++) {
-			auto triangle = LveGameObject::createGameObject();
-			triangle.model = lveModel;
-			triangle.transform2d.scale = glm::vec2(.5f) + i * 0.025f;
-			triangle.transform2d.rotation = i * glm::pi<float>() * .025f;
-			triangle.color = colors[i % colors.size()];
-			gameObjects.push_back(std::move(triangle));
-		}
-	}
+class Vec2FieldSystem {
+ public:
+  void update(
+      const GravityPhysicsSystem& physicsSystem,
+      std::vector<LveGameObject>& physicsObjs,
+      std::vector<LveGameObject>& vectorField) {
+    // For each field line we caluclate the net graviation force for that point in space
+    for (auto& vf : vectorField) {
+      glm::vec2 direction{};
+      for (auto& obj : physicsObjs) {
+        direction += physicsSystem.computeForce(obj, vf);
+      }
 
+      // This scales the length of the field line based on the log of the length
+      // values were chosen just through trial and error based on what i liked the look
+      // of and then the field line is rotated to point in the direction of the field
+      vf.transform2d.scale.x =
+          0.005f + 0.045f * glm::clamp(glm::log(glm::length(direction) + 1) / 3.f, 0.f, 1.f);
+      vf.transform2d.rotation = atan2(direction.y, direction.x);
+    }
+  }
+};
+
+std::unique_ptr<LveModel> createSquareModel(LveDevice& device, glm::vec2 offset) {
+  std::vector<LveModel::Vertex> vertices = {
+      {{-0.5f, -0.5f}},
+      {{0.5f, 0.5f}},
+      {{-0.5f, 0.5f}},
+      {{-0.5f, -0.5f}},
+      {{0.5f, -0.5f}},
+      {{0.5f, 0.5f}},  //
+  };
+  for (auto& v : vertices) {
+    v.position += offset;
+  }
+  return std::make_unique<LveModel>(device, vertices);
 }
+
+std::unique_ptr<LveModel> createCircleModel(LveDevice& device, unsigned int numSides) {
+  std::vector<LveModel::Vertex> uniqueVertices{};
+  for (int i = 0; i < numSides; i++) {
+    float angle = i * glm::two_pi<float>() / numSides;
+    uniqueVertices.push_back({{glm::cos(angle), glm::sin(angle)}});
+  }
+  uniqueVertices.push_back({});  // adds center vertex at 0, 0
+
+  std::vector<LveModel::Vertex> vertices{};
+  for (int i = 0; i < numSides; i++) {
+    vertices.push_back(uniqueVertices[i]);
+    vertices.push_back(uniqueVertices[(i + 1) % numSides]);
+    vertices.push_back(uniqueVertices[numSides]);
+  }
+  return std::make_unique<LveModel>(device, vertices);
+}
+
+FirstApp::FirstApp() { loadGameObjects(); }
+
+FirstApp::~FirstApp() {}
+
+void FirstApp::run() {
+  // create some models
+  std::shared_ptr<LveModel> squareModel = createSquareModel(
+      lveDevice,
+      {.5f, .0f});  // offset model by .5 so rotation occurs at edge rather than center of square
+  std::shared_ptr<LveModel> circleModel = createCircleModel(lveDevice, 64);
+
+  // create physics objects
+  std::vector<LveGameObject> physicsObjects{};
+  auto red = LveGameObject::createGameObject();
+  red.transform2d.scale = glm::vec2{.05f};
+  red.transform2d.translation = {.5f, .5f};
+  red.color = {1.f, 0.f, 0.f};
+  red.rigidBody2d.velocity = {-.7f, .0f};
+  red.model = circleModel;
+  physicsObjects.push_back(std::move(red));
+  auto blue = LveGameObject::createGameObject();
+  blue.transform2d.scale = glm::vec2{.05f};
+  blue.transform2d.translation = {-.45f, -.25f};
+  blue.color = {0.f, 0.f, 1.f};
+  blue.rigidBody2d.velocity = {.8f, .0f};
+  blue.model = circleModel;
+  physicsObjects.push_back(std::move(blue));
+  auto green = LveGameObject::createGameObject();
+  green.transform2d.scale = glm::vec2{.03f};
+  green.transform2d.translation = {.25f, -.45f};
+  green.color = {0.f, 1.f, 0.f};
+  green.rigidBody2d.velocity = {-.5f, 1.1f};
+  green.rigidBody2d.mass = 0.3f;
+  green.model = circleModel;
+  physicsObjects.push_back(std::move(green));
+
+  // create vector field
+  std::vector<LveGameObject> vectorField{};
+  int gridCount = 40;
+  for (int i = 0; i < gridCount; i++) {
+    for (int j = 0; j < gridCount; j++) {
+      auto vf = LveGameObject::createGameObject();
+      vf.transform2d.scale = glm::vec2(0.005f);
+      vf.transform2d.translation = {
+          -1.0f + (i + 0.5f) * 2.0f / gridCount,
+          -1.0f + (j + 0.5f) * 2.0f / gridCount};
+      vf.color = glm::vec3(1.0f);
+      vf.model = squareModel;
+      vectorField.push_back(std::move(vf));
+    }
+  }
+
+  GravityPhysicsSystem gravitySystem{0.91f};
+  Vec2FieldSystem vecFieldSystem{};
+
+  SimpleRenderSystem simpleRenderSystem{lveDevice, lveRenderer.getSwapChainRenderPass()};
+
+  while (!lveWindow.shouldClose()) {
+    glfwPollEvents();
+
+    if (auto commandBuffer = lveRenderer.beginFrame()) {
+      // update systems
+      gravitySystem.update(physicsObjects, 1.f / 60, 15);
+      vecFieldSystem.update(gravitySystem, physicsObjects, vectorField);
+
+      // render system
+      lveRenderer.beginSwapChainRenderPass(commandBuffer);
+      simpleRenderSystem.renderGameObjects(commandBuffer, physicsObjects);
+      simpleRenderSystem.renderGameObjects(commandBuffer, vectorField);
+      lveRenderer.endSwapChainRenderPass(commandBuffer);
+      lveRenderer.endFrame();
+    }
+  }
+
+  vkDeviceWaitIdle(lveDevice.device());
+}
+
+void FirstApp::loadGameObjects() {
+  std::vector<LveModel::Vertex> vertices{
+      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+  auto lveModel = std::make_shared<LveModel>(lveDevice, vertices);
+
+  auto triangle = LveGameObject::createGameObject();
+  triangle.model = lveModel;
+  triangle.color = {.1f, .8f, .1f};
+  triangle.transform2d.translation.x = .2f;
+  triangle.transform2d.scale = {2.f, .5f};
+  triangle.transform2d.rotation = .25f * glm::two_pi<float>();
+
+  gameObjects.push_back(std::move(triangle));
+}
+
+}  // namespace lve
+
