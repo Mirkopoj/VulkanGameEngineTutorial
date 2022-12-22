@@ -141,28 +141,30 @@ void FirstApp::run() {
 
   // create physics objects
   std::vector<LveGameObject> physicsObjects{};
-  auto red = LveGameObject::createGameObject();
-  red.transform2d.scale = glm::vec2{.05f};
-  red.transform2d.translation = {.5f, .5f};
-  red.color = {1.f, 0.f, 0.f};
-  red.rigidBody2d.velocity = {-.7f, .0f};
-  red.model = circleModel;
-  physicsObjects.push_back(std::move(red));
-  auto blue = LveGameObject::createGameObject();
-  blue.transform2d.scale = glm::vec2{.05f};
-  blue.transform2d.translation = {-.45f, -.25f};
-  blue.color = {0.f, 0.f, 1.f};
-  blue.rigidBody2d.velocity = {.8f, .0f};
-  blue.model = circleModel;
-  physicsObjects.push_back(std::move(blue));
-  auto green = LveGameObject::createGameObject();
-  green.transform2d.scale = glm::vec2{.03f};
-  green.transform2d.translation = {.25f, -.45f};
-  green.color = {0.f, 1.f, 0.f};
-  green.rigidBody2d.velocity = {-.5f, 1.1f};
-  green.rigidBody2d.mass = 0.3f;
-  green.model = circleModel;
-  physicsObjects.push_back(std::move(green));
+  auto sol = LveGameObject::createGameObject();
+  sol.transform2d.scale = glm::vec2{.1f};
+  sol.transform2d.translation = {.0f, .0f};
+  sol.color = {1.f, 1.f, 0.f};
+  sol.rigidBody2d.velocity = {.0f, .0f};
+  sol.rigidBody2d.mass = 272145.870186f;
+  sol.model = circleModel;
+  physicsObjects.push_back(std::move(sol));
+  auto tierra = LveGameObject::createGameObject();
+  tierra.transform2d.scale = glm::vec2{.005f};
+  tierra.transform2d.translation = {.0f, .997f};
+  tierra.color = {0.f, 0.f, 1.f};
+  tierra.rigidBody2d.velocity = {1.0f, .0f};
+  tierra.rigidBody2d.mass = 0.812627568f;
+  tierra.model = circleModel;
+  physicsObjects.push_back(std::move(tierra));
+  auto luna = LveGameObject::createGameObject();
+  luna.transform2d.scale = glm::vec2{.001f};
+  luna.transform2d.translation = {.0f, 1.0f};
+  luna.color = {0.8f, 0.8f, 0.8f};
+  luna.rigidBody2d.velocity = {1.0f-0.03448275862f, 0.0f};
+  luna.rigidBody2d.mass = 0.01f;
+  luna.model = circleModel;
+  physicsObjects.push_back(std::move(luna));
 
   // create vector field
   std::vector<LveGameObject> vectorField{};
@@ -174,13 +176,13 @@ void FirstApp::run() {
       vf.transform2d.translation = {
           -1.0f + (i + 0.5f) * 2.0f / gridCount,
           -1.0f + (j + 0.5f) * 2.0f / gridCount};
-      vf.color = glm::vec3(1.0f);
+      vf.color = glm::vec4(0.5f);
       vf.model = squareModel;
       vectorField.push_back(std::move(vf));
     }
   }
 
-  GravityPhysicsSystem gravitySystem{0.91f};
+  GravityPhysicsSystem gravitySystem{6.674e-6f};
   Vec2FieldSystem vecFieldSystem{};
 
   SimpleRenderSystem simpleRenderSystem{lveDevice, lveRenderer.getSwapChainRenderPass()};
