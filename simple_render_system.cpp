@@ -1,18 +1,5 @@
 #include "simple_render_system.hpp"
-#include "lve_camera.hpp"
-#include "lve_device.hpp"
-#include "lve_game_object.hpp"
-#include "lve_model.hpp"
-#include "lve_pipeline.hpp"
-#include "lve_swap_chain.hpp"
-#include <GLFW/glfw3.h>
-#include <array>
-#include <cassert>
-#include <cstdint>
-#include <memory>
-#include <sys/types.h>
-#include <vector>
-#include <vulkan/vulkan_core.h>
+#include <glm/fwd.hpp>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -26,7 +13,7 @@ namespace lve {
 
 	struct SimplePushConstantData {
 		glm::mat4 transform{1.f};
-		alignas(16) glm::vec3 color;
+		glm::mat4 normalMatrix{1.f};
 	};
 
 	SimpleRenderSystem::SimpleRenderSystem(LveDevice &device, VkRenderPass renderPass):
@@ -87,8 +74,9 @@ namespace lve {
 		for (auto& obj: gameObjects) {
 
 			SimplePushConstantData push{};
-			push.color = obj.color;
-			push.transform = projectionView * obj.transform.mat4();
+			auto modelMatrix = obj.transform.mat4();
+			push.transform = projectionView * modelMatrix;
+			push.normalMatrix = obj.transform.normalMatrix();
 
 			vkCmdPushConstants(
 					commandBuffer,
