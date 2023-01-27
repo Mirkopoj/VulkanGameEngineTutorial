@@ -4,6 +4,7 @@
 #include "lve_device.hpp"
 #include "lve_game_object.hpp"
 #include "lve_renderer.hpp"
+#include "lve_descriptors.hpp"
 
 #include <memory>
 #include <vector>
@@ -31,7 +32,8 @@ namespace lve {
 			LveDevice lveDevice{lveWindow};
 			LveRenderer lveRenderer{lveWindow, lveDevice};
 
-			std::vector<LveGameObject> gameObjects;
+			std::unique_ptr<LveDescriptorPool> globalPool{};
+			LveGameObject::Map gameObjects;
 
 	};
 }
