@@ -9,13 +9,14 @@ vertObjFiles = $(patsubst %.vert, %.vert.spv, $(vertSources))
 fragSources = $(shell find ./shaders -type f -name "*.frag")
 fragObjFiles = $(patsubst %.frag, %.frag.spv, $(fragSources))
 SRCS = $(shell find -type f -name "*.cpp")
-OBJS = $(patsubst %.cpp, %.o, $(SRCS))
+OBJS = $(patsubst ./%.cpp, obj/%.o, $(SRCS))
 
 TARGET = VulkanTest
 $(TARGET): $(vertObjFiles) $(fragObjFiles)
 $(TARGET): $(OBJS)
 	g++ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
-%.o: %.cpp
+obj/%.o: %.cpp
+	@mkdir -p $(@D)
 	g++ $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
 %.spv: %
@@ -29,5 +30,4 @@ test: VulkanTest
 clean:
 	rm -f VulkanTest
 	rm -f shaders/*.spv
-	rm -f *.o
-	rm -f */*.o
+	rm -rf obj/

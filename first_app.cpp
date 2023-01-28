@@ -119,8 +119,10 @@ void FirstApp::run() {
 
 			// render system
 			lveRenderer.beginSwapChainRenderPass(commandBuffer);
+
 			simpleRenderSystem.renderGameObjects(frameInfo);
 			pointLightSystem.render(frameInfo);
+
 			lveRenderer.endSwapChainRenderPass(commandBuffer);
 			lveRenderer.endFrame();
 		}
