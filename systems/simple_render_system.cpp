@@ -98,6 +98,7 @@ namespace lve {
 					0,
 					sizeof(SimplePushConstantData),
 					&push);
+
 			obj.model->bind(frameInfo.commandBuffer);
 			obj.model->draw(frameInfo.commandBuffer);
 		}
