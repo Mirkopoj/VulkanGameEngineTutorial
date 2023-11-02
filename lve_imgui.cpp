@@ -28,7 +28,7 @@ void ImGuiUi::update() {
   ImGui::Text("Hello, world %d", 123);
   if (ImGui::Button("Save"))
 	  printf("Boton\n");
-  char buf[100];
+  char buf[100]="";
   ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
   float f;
   ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
