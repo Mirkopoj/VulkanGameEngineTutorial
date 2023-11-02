@@ -2,7 +2,7 @@ CFLAGS = -std=c++17 -I. -I$(VULKAN_SDK_PATH)/include
 ifeq ($(DEBUG),1)
 	CFLAGS := -g3 $(CFLAGS)
 endif
-LDFLAGS = -L$(VULKAN_SDK_PATH)/lib $(shell pkgconf --static --libs glfw3) -lvulkan
+LDFLAGS = -L$(VULKAN_SDK_PATH)/lib $(shell pkgconf --static --libs glfw3) -lvulkan -limgui
 
 vertSources = $(shell find ./shaders -type f -name "*.vert")
 vertObjFiles = $(patsubst %.vert, %.vert.spv, $(vertSources))

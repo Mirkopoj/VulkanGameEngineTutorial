@@ -13,18 +13,20 @@
 namespace lve {
 
 class LveSwapChain {
- public:
+public:
   static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
   LveSwapChain(LveDevice &deviceRef, VkExtent2D windowExtent);
-  LveSwapChain(
-		  LveDevice &deviceRef, VkExtent2D windowExtent, std::shared_ptr<LveSwapChain> previows);
+  LveSwapChain(LveDevice &deviceRef, VkExtent2D windowExtent,
+               std::shared_ptr<LveSwapChain> previows);
   ~LveSwapChain();
 
   LveSwapChain(const LveSwapChain &) = delete;
   LveSwapChain &operator=(const LveSwapChain &) = delete;
 
-  VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
+  VkFramebuffer getFrameBuffer(int index) {
+    return swapChainFramebuffers[index];
+  }
   VkRenderPass getRenderPass() { return renderPass; }
   VkImageView getImageView(int index) { return swapChainImageViews[index]; }
   size_t imageCount() { return swapChainImages.size(); }
@@ -34,19 +36,21 @@ class LveSwapChain {
   uint32_t height() { return swapChainExtent.height; }
 
   float extentAspectRatio() {
-    return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
+    return static_cast<float>(swapChainExtent.width) /
+           static_cast<float>(swapChainExtent.height);
   }
   VkFormat findDepthFormat();
 
   VkResult acquireNextImage(uint32_t *imageIndex);
-  VkResult submitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
+  VkResult submitCommandBuffers(const VkCommandBuffer *buffers,
+                                uint32_t *imageIndex);
 
   bool compareSwapFormats(const LveSwapChain &swapChain) const {
-	  return swapChain.swapChainDepthFormat == swapChainDepthFormat &&
-				swapChain.swapChainImageFormat == swapChainImageFormat;
+    return swapChain.swapChainDepthFormat == swapChainDepthFormat &&
+           swapChain.swapChainImageFormat == swapChainImageFormat;
   }
 
- private:
+private:
   void init();
   void createSwapChain();
   void createImageViews();
@@ -88,4 +92,4 @@ class LveSwapChain {
   size_t currentFrame = 0;
 };
 
-}  // namespace lve
+} // namespace lve

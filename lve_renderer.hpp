@@ -5,6 +5,7 @@
 #include "lve_window.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -22,6 +23,7 @@ public:
   VkRenderPass getSwapChainRenderPass() const {
     return lveSwapChain->getRenderPass();
   }
+  uint32_t getSwapChainImageCount() const { return lveSwapChain->imageCount(); }
   float getAspectRatio() const { return lveSwapChain->extentAspectRatio(); }
   bool isFrameInProgress() const { return isFrameStarted; }
 
