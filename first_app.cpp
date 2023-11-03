@@ -201,12 +201,11 @@ void FirstApp::run() {
 
   auto currentTime = std::chrono::high_resolution_clock::now();
 
-  int imgui_descriptor_size = 3;
   std::unique_ptr<LveDescriptorPool> imguiPool =
       LveDescriptorPool::Builder(lveDevice)
-          .setMaxSets(imgui_descriptor_size)
+          .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
           .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                       imgui_descriptor_size)
+                       LveSwapChain::MAX_FRAMES_IN_FLIGHT)
           .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
           .build();
 
