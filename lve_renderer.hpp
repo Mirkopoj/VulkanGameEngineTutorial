@@ -44,6 +44,8 @@ public:
   void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
   void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
+  std::vector<VkCommandBuffer> get_commandBuffers() { return commandBuffers; }
+
 private:
   void createCommandBuffers();
   void freeCommandBuffers();

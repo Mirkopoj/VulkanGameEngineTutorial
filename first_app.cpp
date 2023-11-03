@@ -201,7 +201,7 @@ void FirstApp::run() {
 
   auto currentTime = std::chrono::high_resolution_clock::now();
 
-  int imgui_descriptor_size = 10000;
+  int imgui_descriptor_size = 3;
   std::unique_ptr<LveDescriptorPool> imguiPool =
       LveDescriptorPool::Builder(lveDevice)
           .setMaxSets(imgui_descriptor_size)
@@ -210,7 +210,6 @@ void FirstApp::run() {
           .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
           .build();
 
-  ImGuiUi myimgui;
   ImGui_ImplVulkan_InitInfo info = {};
   info.Instance = lveDevice.get_instance();
   info.PhysicalDevice = lveDevice.physical_device();
@@ -220,13 +219,13 @@ void FirstApp::run() {
   info.PipelineCache = VK_NULL_HANDLE;
   info.DescriptorPool = imguiPool->descriptor_pool();
   info.Subpass = 0;
-  info.MinImageCount = LveSwapChain::MAX_FRAMES_IN_FLIGHT;
+  info.MinImageCount = lveRenderer.getSwapChainImageCount();
   info.ImageCount = lveRenderer.getSwapChainImageCount();
   info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
   info.Allocator = nullptr;
   info.CheckVkResultFn = check_vk_result;
-  myimgui.init(lveWindow.getGLFWwindow(), &info,
-               lveRenderer.getSwapChainRenderPass());
+  ImGuiUi myimgui(lveWindow.getGLFWwindow(), &info,
+                  lveRenderer.getSwapChainRenderPass(), lveRenderer);
 
   while (!lveWindow.shouldClose()) {
     glfwPollEvents();
@@ -254,10 +253,9 @@ void FirstApp::run() {
                           camera,
                           globalDescriptorSets[frameIndex],
                           gameObjects};
-      myimgui.new_frame(commandBuffer);
+      myimgui.new_frame();
 
       // update
-      myimgui.update();
       GlobalUbo ubo{};
       ubo.projection = camera.getProjection();
       ubo.view = camera.getView();
@@ -265,6 +263,7 @@ void FirstApp::run() {
       pointLightSystem.update(frameInfo, ubo);
       uboBuffers[frameIndex]->writeToBuffer(&ubo);
       uboBuffers[frameIndex]->flush();
+      myimgui.update();
 
       // render system
       lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -279,7 +278,6 @@ void FirstApp::run() {
   }
 
   vkDeviceWaitIdle(lveDevice.device());
-  myimgui.shutdown();
 }
 
 void FirstApp::loadGameObjects() {
