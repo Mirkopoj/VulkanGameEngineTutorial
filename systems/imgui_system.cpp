@@ -1,13 +1,81 @@
-#include "lve_imgui.hpp"
+#include "imgui_system.hpp"
 
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_vulkan.h"
-#include "lve_renderer.hpp"
-#include "lve_swap_chain.hpp"
+#include "../imgui/imgui_impl_glfw.h"
+#include "../imgui/imgui_impl_vulkan.h"
+#include "../lve/lve_renderer.hpp"
+#include "../lve/lve_swap_chain.hpp"
 #include <cstdio>
 #include <imgui.h>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+
+const char *VkResultToCString(VkResult result); 
+
+static void check_vk_result(VkResult err);
+
+ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
+                 lve::LveRenderer &lveRenderer, VkDescriptorPool imguiPool) {
+  ImGui_ImplVulkan_InitInfo info = {};
+  info.Instance = lveDevice.get_instance();
+  info.PhysicalDevice = lveDevice.physical_device();
+  info.Device = lveDevice.device();
+  info.QueueFamily = lveDevice.findPhysicalQueueFamilies().presentFamily;
+  info.Queue = lveDevice.presentQueue();
+  info.PipelineCache = VK_NULL_HANDLE;
+  info.DescriptorPool = imguiPool;
+  info.Subpass = 0;
+  info.MinImageCount = lveRenderer.getSwapChainImageCount();
+  info.ImageCount = lveRenderer.getSwapChainImageCount();
+  info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+  info.Allocator = nullptr;
+  info.CheckVkResultFn = check_vk_result;
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  io.Fonts->AddFontDefault();
+  ImGui_ImplGlfw_InitForVulkan(window, true);
+  ImGui_ImplVulkan_Init(&info, lveRenderer.getSwapChainRenderPass());
+  for (int i = 0; i < lve::LveSwapChain::MAX_FRAMES_IN_FLIGHT; ++i) {
+    if (auto commandBuffer = lveRenderer.beginFrame()) {
+      ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+    }
+    lveRenderer.endFrame();
+  }
+  ImGui_ImplVulkan_DestroyFontUploadObjects();
+  ImGui::StyleColorsDark();
+}
+
+void ImGuiUi::new_frame() {
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+}
+
+void ImGuiUi::update() {
+  ImGui::ShowDemoWindow();
+  ImGui::Begin("Hola");
+  ImGui::Text("Hello, world %d", 123);
+  if (ImGui::Button("Save"))
+    printf("Boton\n");
+  char buf[100] = "";
+  ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
+  float f;
+  ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+  ImGui::Text("%f, %s", f, buf);
+  ImGui::End();
+}
+
+void ImGuiUi::render(VkCommandBuffer command_buffer) {
+  ImGui::Render();
+  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
+}
+
+ImGuiUi::~ImGuiUi() {
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+}
 
 const char *VkResultToCString(VkResult result) {
   switch (result) {
@@ -128,66 +196,3 @@ static void check_vk_result(VkResult err) {
     abort();
 }
 
-ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
-                 lve::LveRenderer &lveRenderer, VkDescriptorPool imguiPool) {
-  ImGui_ImplVulkan_InitInfo info = {};
-  info.Instance = lveDevice.get_instance();
-  info.PhysicalDevice = lveDevice.physical_device();
-  info.Device = lveDevice.device();
-  info.QueueFamily = lveDevice.findPhysicalQueueFamilies().presentFamily;
-  info.Queue = lveDevice.presentQueue();
-  info.PipelineCache = VK_NULL_HANDLE;
-  info.DescriptorPool = imguiPool;
-  info.Subpass = 0;
-  info.MinImageCount = lveRenderer.getSwapChainImageCount();
-  info.ImageCount = lveRenderer.getSwapChainImageCount();
-  info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-  info.Allocator = nullptr;
-  info.CheckVkResultFn = check_vk_result;
-
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  io.Fonts->AddFontDefault();
-  ImGui_ImplGlfw_InitForVulkan(window, true);
-  ImGui_ImplVulkan_Init(&info, lveRenderer.getSwapChainRenderPass());
-  for (int i = 0; i < lve::LveSwapChain::MAX_FRAMES_IN_FLIGHT; ++i) {
-    if (auto commandBuffer = lveRenderer.beginFrame()) {
-      ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-    }
-    lveRenderer.endFrame();
-  }
-  ImGui_ImplVulkan_DestroyFontUploadObjects();
-  ImGui::StyleColorsDark();
-}
-
-void ImGuiUi::new_frame() {
-  ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
-}
-
-void ImGuiUi::update() {
-  ImGui::ShowDemoWindow();
-  ImGui::Begin("Hola");
-  ImGui::Text("Hello, world %d", 123);
-  if (ImGui::Button("Save"))
-    printf("Boton\n");
-  char buf[100] = "";
-  ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
-  float f;
-  ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-  ImGui::Text("%f, %s", f, buf);
-  ImGui::End();
-}
-
-void ImGuiUi::render(VkCommandBuffer command_buffer) {
-  ImGui::Render();
-  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
-}
-
-ImGuiUi::~ImGuiUi() {
-  ImGui_ImplVulkan_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImGui::DestroyContext();
-}

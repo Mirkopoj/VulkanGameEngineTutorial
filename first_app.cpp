@@ -1,13 +1,13 @@
 #include "first_app.hpp"
 
 #include "keyboard_movement_controller.hpp"
-#include "lve_buffer.hpp"
-#include "lve_camera.hpp"
-#include "lve_descriptors.hpp"
-#include "lve_frame_info.hpp"
-#include "lve_game_object.hpp"
-#include "lve_imgui.hpp"
-#include "lve_swap_chain.hpp"
+#include "lve/lve_buffer.hpp"
+#include "lve/lve_camera.hpp"
+#include "lve/lve_descriptors.hpp"
+#include "lve/lve_frame_info.hpp"
+#include "lve/lve_game_object.hpp"
+#include "lve/lve_swap_chain.hpp"
+#include "systems/imgui_system.hpp"
 #include "systems/point_light_system.hpp"
 #include "systems/simple_render_system.hpp"
 #include <glm/fwd.hpp>
@@ -80,8 +80,6 @@ void FirstApp::run() {
   viewerObject.transform.translation.z = -2.5f;
   KeyboardMovementController cameraController{};
 
-  auto currentTime = std::chrono::high_resolution_clock::now();
-
   std::unique_ptr<LveDescriptorPool> imguiPool =
       LveDescriptorPool::Builder(lveDevice)
           .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
@@ -91,6 +89,8 @@ void FirstApp::run() {
           .build();
 
   ImGuiUi myimgui(lveWindow.getGLFWwindow(), lveDevice, lveRenderer, imguiPool->descriptor_pool());
+
+  auto currentTime = std::chrono::high_resolution_clock::now();
 
   while (!lveWindow.shouldClose()) {
     glfwPollEvents();

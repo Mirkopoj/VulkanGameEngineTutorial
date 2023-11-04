@@ -1,9 +1,9 @@
 #pragma once
 
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_vulkan.h"
-#include "lve_device.hpp"
-#include "lve_renderer.hpp"
+#include "../imgui/imgui_impl_glfw.h"
+#include "../imgui/imgui_impl_vulkan.h"
+#include "../lve/lve_device.hpp"
+#include "../lve/lve_renderer.hpp"
 #include <vector>
 
 class ImGuiUi {
