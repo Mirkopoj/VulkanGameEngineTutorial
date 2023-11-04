@@ -10,30 +10,32 @@ layout(location = 1) out vec3 fragPosWorld;
 layout(location = 2) out vec3 fragNormalWorld;
 
 struct PointLight {
-	vec4 position;
-	vec4 color;
+   vec4 position;
+   vec4 color;
 };
 
-layout(set=0, binding=0) uniform GloablUbo {
-	mat4 projection;
-	mat4 view;
-	mat4 invView;
-	vec4 ambientLightColor;
-	PointLight pointLights[10];
-	int numLights;
-} ubo;
+layout(set = 0, binding = 0) uniform GloablUbo {
+   mat4 projection;
+   mat4 view;
+   mat4 invView;
+   vec4 ambientLightColor;
+   PointLight pointLights[10];
+   int numLights;
+}
+ubo;
 
 layout(push_constant) uniform Push {
-	mat4 modelMatrix;
-	mat4 normalMatrix;
-} push;
+   mat4 modelMatrix;
+   mat4 normalMatrix;
+}
+push;
 
 void main() {
-	vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
+   vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
 
-	gl_Position = ubo.projection * ubo.view * positionWorld;
+   gl_Position = ubo.projection * ubo.view * positionWorld;
 
-	fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
-	fragPosWorld = positionWorld.xyz;
-	fragColor = color;
+   fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
+   fragPosWorld = positionWorld.xyz;
+   fragColor = color;
 }

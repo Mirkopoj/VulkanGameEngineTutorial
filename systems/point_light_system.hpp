@@ -1,39 +1,37 @@
 #pragma once
 
-#include "../lve/lve_camera.hpp"
-#include "../lve/lve_pipeline.hpp"
-#include "../lve/lve_device.hpp"
-#include "../lve/lve_game_object.hpp"
-#include "../lve/lve_frame_info.hpp"
+#include <vulkan/vulkan_core.h>
 
 #include <memory>
 #include <vector>
-#include <vulkan/vulkan_core.h>
+
+#include "../lve/lve_camera.hpp"
+#include "../lve/lve_device.hpp"
+#include "../lve/lve_frame_info.hpp"
+#include "../lve/lve_game_object.hpp"
+#include "../lve/lve_pipeline.hpp"
 
 namespace lve {
 
-	class PointLightSystem {
-		public:
+class PointLightSystem {
+  public:
+   PointLightSystem(LveDevice &device, VkRenderPass renderPass,
+                    VkDescriptorSetLayout globalSetLayout);
+   ~PointLightSystem();
 
-			PointLightSystem(
-					LveDevice &device,
-					VkRenderPass renderPass,
-					VkDescriptorSetLayout globalSetLayout);
-			~PointLightSystem();
+   PointLightSystem(const PointLightSystem &) = delete;
+   PointLightSystem &operator=(const PointLightSystem &) = delete;
 
-			PointLightSystem(const PointLightSystem &) = delete;
-			PointLightSystem &operator=(const PointLightSystem &) = delete;
+   void update(FrameInfo &frameInfo, GlobalUbo &ubo);
+   void render(FrameInfo &frameInfo);
 
-			void update(FrameInfo &frameInfo, GlobalUbo &ubo);
-			void render(FrameInfo &frameInfo);
+  private:
+   void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+   void createPipeline(VkRenderPass renderPass);
 
-		private:
-			void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
-			void createPipeline(VkRenderPass renderPass);
+   LveDevice &lveDevice;
 
-  LveDevice &lveDevice;
-
-  std::unique_ptr<LvePipeline> lvePipeline;
-  VkPipelineLayout pipelineLayout;
+   std::unique_ptr<LvePipeline> lvePipeline;
+   VkPipelineLayout pipelineLayout;
 };
-} // namespace lve
+}  // namespace lve
