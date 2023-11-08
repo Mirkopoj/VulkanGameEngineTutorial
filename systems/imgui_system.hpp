@@ -11,10 +11,10 @@ class ImGuiUi {
   public:
    ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
            lve::LveRenderer &lveRenderer, VkDescriptorPool imguiPool);
-   ImGuiUi(ImGuiUi &&) = default;
-   ImGuiUi(const ImGuiUi &) = default;
-   ImGuiUi &operator=(ImGuiUi &&) = default;
-   ImGuiUi &operator=(const ImGuiUi &) = default;
+   ImGuiUi(ImGuiUi &&) = delete;
+   ImGuiUi(const ImGuiUi &) = delete;
+   ImGuiUi &operator=(ImGuiUi &&) = delete;
+   ImGuiUi &operator=(const ImGuiUi &) = delete;
    ~ImGuiUi();
 
    void new_frame();
