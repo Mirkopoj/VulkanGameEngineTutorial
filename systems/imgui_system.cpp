@@ -39,12 +39,9 @@ ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
    io.Fonts->AddFontDefault();
    ImGui_ImplGlfw_InitForVulkan(window, true);
    ImGui_ImplVulkan_Init(&info, lveRenderer.getSwapChainRenderPass());
-   for (int i = 0; i < lve::LveSwapChain::MAX_FRAMES_IN_FLIGHT; ++i) {
-      if (auto commandBuffer = lveRenderer.beginFrame()) {
-         ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-      }
-      lveRenderer.endFrame();
-   }
+   VkCommandBuffer commandBuffer = lveDevice.beginSingleTimeCommands();
+   ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+   lveDevice.endSingleTimeCommands(commandBuffer);
    ImGui_ImplVulkan_DestroyFontUploadObjects();
    ImGui::StyleColorsDark();
 }
