@@ -1,11 +1,42 @@
 #pragma once
 
-#include <vector>
+#include <cstring>
 
-#include "../imgui/imgui_impl_glfw.h"
-#include "../imgui/imgui_impl_vulkan.h"
 #include "../lve/lve_device.hpp"
 #include "../lve/lve_renderer.hpp"
+
+struct MyTextureData {
+   VkDescriptorSet
+       DS;  // Descriptor set: this is what you'll pass to Image()
+   int Width;
+   int Height;
+   int Channels;
+
+   // Need to keep track of these to properly cleanup
+   VkImageView ImageView;
+   VkImage Image;
+   VkDeviceMemory ImageMemory;
+   VkSampler Sampler;
+   VkBuffer UploadBuffer;
+   VkDeviceMemory UploadBufferMemory;
+
+   MyTextureData() {
+      memset(this, 0, sizeof(*this));
+   }
+};
+
+const char *VkResultToCString(VkResult result);
+
+static void check_vk_result(VkResult err) {
+   if (err == 0) return;
+   fprintf(stderr, "[vulkan] Error: VkResult = %s\n",
+           VkResultToCString(err));
+   if (err < 0) abort();
+}
+
+bool LoadTextureFromFile(const char *filename, MyTextureData *tex_data,
+                         lve::LveDevice &device);
+void RemoveTexture(MyTextureData *tex_data, lve::LveDevice &device);
 
 class ImGuiUi {
   public:
@@ -18,6 +49,14 @@ class ImGuiUi {
    ~ImGuiUi();
 
    void new_frame();
-   void update();
+   void update(MyTextureData* i_img, MyTextureData* o_img);
    void render(VkCommandBuffer command_buffer);
+
+  private:
+   typedef struct {
+      std::string buf;
+      float f;
+   } State;
+
+   State state;
 };

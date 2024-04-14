@@ -2,29 +2,30 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include <memory>
-#include <vector>
-
 #include "../lve/lve_device.hpp"
-#include "../lve/lve_pipeline.hpp"
 
 namespace lve {
 
 class ComputeSystem {
   public:
-   ComputeSystem(LveDevice &device);
+   ComputeSystem(LveDevice &device,
+                 const std::vector<VkDescriptorSetLayout>,
+                 const std::string &);
    ComputeSystem(ComputeSystem &&) = delete;
    ComputeSystem(const ComputeSystem &) = delete;
    ComputeSystem &operator=(ComputeSystem &&) = delete;
    ComputeSystem &operator=(const ComputeSystem &) = delete;
    ~ComputeSystem();
 
+   VkPipeline computePipeline;
+   VkPipelineLayout pipelineLayout;
   private:
    LveDevice &lveDevice;
-	std::unique_ptr<LvePipeline> lvePipeline;
-   VkPipelineLayout pipelineLayout;
-   void createPipelineLayout();
+   VkShaderModule module;
+   void createPipelineLayout(const std::vector<VkDescriptorSetLayout>);
    void createPipeline();
+   void createShaderModule(const std::string &);
+   std::vector<char> readFile(const std::string &filepath);
 };
 
 }  // namespace lve

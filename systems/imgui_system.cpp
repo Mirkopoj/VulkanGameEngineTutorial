@@ -1,23 +1,26 @@
 #include "imgui_system.hpp"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <vulkan/vulkan_core.h>
 
 #include <cstdio>
-#include <vector>
 
 #include "../imgui/imgui_impl_glfw.h"
 #include "../imgui/imgui_impl_vulkan.h"
 #include "../lve/lve_renderer.hpp"
-#include "../lve/lve_swap_chain.hpp"
+
 
 const char *VkResultToCString(VkResult result);
 
 static void check_vk_result(VkResult err);
 
 ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
-                 lve::LveRenderer &lveRenderer,
-                 VkDescriptorPool imguiPool) {
+                 lve::LveRenderer &lveRenderer, VkDescriptorPool imguiPool)
+    : state({
+          .buf = "",
+          .f = 0.0,
+      }) {
    ImGui_ImplVulkan_InitInfo info = {};
    info.Instance = lveDevice.get_instance();
    info.PhysicalDevice = lveDevice.physical_device();
@@ -52,16 +55,20 @@ void ImGuiUi::new_frame() {
    ImGui::NewFrame();
 }
 
-void ImGuiUi::update() {
+void ImGuiUi::update(MyTextureData* i_img, MyTextureData* o_img) {
    ImGui::ShowDemoWindow();
    ImGui::Begin("Hola");
    ImGui::Text("Hello, world %d", 123);
    if (ImGui::Button("Save")) printf("Boton\n");
-   char buf[100] = "";
-   ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
-   float f;
-   ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-   ImGui::Text("%f, %s", f, buf);
+   ImGui::InputText("string", &state.buf);
+   ImGui::SliderFloat("float", &state.f, 0.0f, 1.0f);
+   ImGui::Text("%f, %s", state.f, state.buf.c_str());
+   ImGui::End();
+   ImGui::Begin("Antes");
+	ImGui::Image((ImTextureID)i_img->DS, ImVec2(i_img->Width, i_img->Height));
+   ImGui::End();
+   ImGui::Begin("Despues");
+	ImGui::Image((ImTextureID)o_img->DS, ImVec2(o_img->Width, o_img->Height));
    ImGui::End();
 }
 
@@ -185,11 +192,4 @@ const char *VkResultToCString(VkResult result) {
       default:
          return "??????";
    }
-}
-
-static void check_vk_result(VkResult err) {
-   if (err == 0) return;
-   fprintf(stderr, "[vulkan] Error: VkResult = %s\n",
-           VkResultToCString(err));
-   if (err < 0) abort();
 }

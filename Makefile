@@ -8,11 +8,13 @@ vertSources = $(shell find ./shaders -type f -name "*.vert")
 vertObjFiles = $(patsubst %.vert, %.vert.spv, $(vertSources))
 fragSources = $(shell find ./shaders -type f -name "*.frag")
 fragObjFiles = $(patsubst %.frag, %.frag.spv, $(fragSources))
+compSources = $(shell find ./shaders -type f -name "*.comp")
+compObjFiles = $(patsubst %.comp, %.comp.spv, $(compSources))
 SRCS = $(shell find -type f -name "*.cpp")
 OBJS = $(patsubst ./%.cpp, obj/%.o, $(SRCS))
 
 TARGET = VulkanTest
-$(TARGET): $(vertObjFiles) $(fragObjFiles)
+$(TARGET): $(vertObjFiles) $(fragObjFiles) $(compObjFiles)
 $(TARGET): $(OBJS)
 	g++ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 obj/%.o: %.cpp
