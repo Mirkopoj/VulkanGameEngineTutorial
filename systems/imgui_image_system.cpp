@@ -56,7 +56,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       info.samples = VK_SAMPLE_COUNT_1_BIT;
       info.tiling = VK_IMAGE_TILING_OPTIMAL;
       info.usage =
-          VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+          VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
       info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
       info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
       err =
@@ -115,7 +115,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
    // Create Descriptor Set using ImGUI's implementation
    tex_data->DS = ImGui_ImplVulkan_AddTexture(
        tex_data->Sampler, tex_data->ImageView,
-       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+       VK_IMAGE_LAYOUT_GENERAL);
 
    // Create Upload Buffer
    {
@@ -219,7 +219,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       use_barrier[0].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
       use_barrier[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
       use_barrier[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-      use_barrier[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      use_barrier[0].newLayout = VK_IMAGE_LAYOUT_GENERAL;
       use_barrier[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
       use_barrier[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
       use_barrier[0].image = tex_data->Image;

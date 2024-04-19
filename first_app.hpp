@@ -3,13 +3,13 @@
 #include <vulkan/vulkan_core.h>
 
 #include <memory>
-#include <vector>
 
 #include "lve/lve_descriptors.hpp"
 #include "lve/lve_device.hpp"
 #include "lve/lve_game_object.hpp"
 #include "lve/lve_renderer.hpp"
 #include "lve/lve_window.hpp"
+#include "systems/compute_system.hpp"
 
 namespace lve {
 
@@ -28,6 +28,10 @@ class FirstApp {
 
   private:
    void loadGameObjects();
+   void compute(VkCommandBuffer &CmdBuffer, LveDevice &lveDevice,
+                ComputeSystem &compSys, int width, int height,
+                int channels, VkDescriptorSet &DescriptorSet,
+                VkFence &Fence, VkQueue &Queue, VkSubmitInfo &SubmitInfo);
 
    LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
    LveDevice lveDevice{lveWindow};

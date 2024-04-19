@@ -49,13 +49,26 @@ class ImGuiUi {
    ~ImGuiUi();
 
    void new_frame();
-   void update(MyTextureData* i_img, MyTextureData* o_img);
+   void update(MyTextureData *i_img, MyTextureData *o_img);
    void render(VkCommandBuffer command_buffer);
+
+   int get_shader_count() {
+      return state.shader_count;
+   }
+   int get_first_shader() {
+      return state.first_shader;
+   }
+   int get_second_shader() {
+      return state.second_shader;
+   }
 
   private:
    typedef struct {
       std::string buf;
       float f;
+      int shader_count;
+      int first_shader;
+      int second_shader;
    } State;
 
    State state;

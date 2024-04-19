@@ -10,7 +10,6 @@
 #include "../imgui/imgui_impl_vulkan.h"
 #include "../lve/lve_renderer.hpp"
 
-
 const char *VkResultToCString(VkResult result);
 
 static void check_vk_result(VkResult err);
@@ -55,8 +54,9 @@ void ImGuiUi::new_frame() {
    ImGui::NewFrame();
 }
 
-void ImGuiUi::update(MyTextureData* i_img, MyTextureData* o_img) {
+void ImGuiUi::update(MyTextureData *i_img, MyTextureData *o_img) {
    ImGui::ShowDemoWindow();
+
    ImGui::Begin("Hola");
    ImGui::Text("Hello, world %d", 123);
    if (ImGui::Button("Save")) printf("Boton\n");
@@ -64,11 +64,38 @@ void ImGuiUi::update(MyTextureData* i_img, MyTextureData* o_img) {
    ImGui::SliderFloat("float", &state.f, 0.0f, 1.0f);
    ImGui::Text("%f, %s", state.f, state.buf.c_str());
    ImGui::End();
+
    ImGui::Begin("Antes");
-	ImGui::Image((ImTextureID)i_img->DS, ImVec2(i_img->Width, i_img->Height));
+   ImGui::Image((ImTextureID)i_img->DS,
+                ImVec2(i_img->Width, i_img->Height));
    ImGui::End();
+
    ImGui::Begin("Despues");
-	ImGui::Image((ImTextureID)o_img->DS, ImVec2(o_img->Width, o_img->Height));
+   ImGui::Image((ImTextureID)o_img->DS,
+                ImVec2(o_img->Width, o_img->Height));
+   ImGui::End();
+
+   ImGui::Begin("Shaders");
+   ImGui::Text("Cantidad");
+   ImGui::RadioButton("0", &state.shader_count, 0);
+   ImGui::SameLine();
+   ImGui::RadioButton("1", &state.shader_count, 1);
+   ImGui::SameLine();
+   ImGui::RadioButton("2", &state.shader_count, 2);
+   if (state.shader_count > 0) {
+      ImGui::Text("Primero");
+      ImGui::RadioButton("Bordes", &state.first_shader, 0);
+      ImGui::SameLine();
+      ImGui::RadioButton("Borroso", &state.first_shader, 1);
+   }
+   if (state.shader_count > 1) {
+      ImGui::Text("Segundo");
+		ImGui::PushID(0);
+      ImGui::RadioButton("Bordes", &state.second_shader, 0);
+      ImGui::SameLine();
+      ImGui::RadioButton("Borroso", &state.second_shader, 1);
+		ImGui::PopID();
+   }
    ImGui::End();
 }
 

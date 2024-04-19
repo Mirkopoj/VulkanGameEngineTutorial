@@ -4,15 +4,14 @@
 
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
-#include <iostream>
 #include <memory>
-#include <ostream>
 #include <vector>
 
 #include "keyboard_movement_controller.hpp"
 #include "lve/lve_buffer.hpp"
 #include "lve/lve_camera.hpp"
 #include "lve/lve_descriptors.hpp"
+#include "lve/lve_device.hpp"
 #include "lve/lve_frame_info.hpp"
 #include "lve/lve_game_object.hpp"
 #include "lve/lve_swap_chain.hpp"
@@ -101,15 +100,18 @@ void FirstApp::run() {
    MyTextureData initial_img;
    bool ret = LoadTextureFromFile("Fondo.jpg", &initial_img, lveDevice);
    IM_ASSERT(ret);
+   MyTextureData buffer_img;
+   ret = LoadTextureFromFile("Fondo.jpg", &buffer_img, lveDevice);
+   IM_ASSERT(ret);
    MyTextureData filtered_img;
    ret = LoadTextureFromFile("Fondo.jpg", &filtered_img, lveDevice);
    IM_ASSERT(ret);
 
    // Veeer vvvvvvvv hay un Builder
    const std::vector<VkDescriptorSetLayoutBinding> desc_lay_bind = {
-       {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+       {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
         VK_SHADER_STAGE_COMPUTE_BIT},
-       {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+       {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
         VK_SHADER_STAGE_COMPUTE_BIT}};
 
    VkDescriptorSetLayoutCreateInfo desc_lay_info = {};
@@ -121,7 +123,7 @@ void FirstApp::run() {
    desc_lay_info.pBindings = desc_lay_bind.data();
 
    std::vector<VkDescriptorSetLayout> desc_lay = {};
-	desc_lay.resize(1);
+   desc_lay.resize(1);
    vkCreateDescriptorSetLayout(lveDevice.device(), &desc_lay_info, nullptr,
                                &desc_lay[0]);
    // Hasta aca^^^^^^^^^
@@ -129,15 +131,16 @@ void FirstApp::run() {
    ComputeSystem edge_detect{lveDevice, desc_lay,
                              "shaders/edges.comp.spv"};
    ComputeSystem blur_filter{lveDevice, desc_lay, "shaders/blur.comp.spv"};
+   ComputeSystem no_filter{lveDevice, desc_lay, "shaders/no_filter.comp.spv"};
 
    // Ver esto tmb
    VkDescriptorPoolSize desc_pool_size = {
-       .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 2};
+       .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 6};
    VkDescriptorPoolCreateInfo desc_pool_info = {
        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
        .pNext = nullptr,
        .flags = 0,
-       .maxSets = 2,
+       .maxSets = 3,
        .poolSizeCount = 1,
        .pPoolSizes = &desc_pool_size,
    };
@@ -152,141 +155,109 @@ void FirstApp::run() {
        .descriptorSetCount = 1,
        .pSetLayouts = desc_lay.data()};
 
-   std::vector<VkDescriptorSet> DescriptorSets = {};
-   DescriptorSets.resize(1);
+   VkDescriptorSet DescriptorSetInOut = {};
+   VkDescriptorSet DescriptorSetInBuf = {};
+   VkDescriptorSet DescriptorSetBufOut = {};
    vkAllocateDescriptorSets(lveDevice.device(), &desc_alloc_info,
-                            &DescriptorSets[0]);
+                            &DescriptorSetInOut);
+   vkAllocateDescriptorSets(lveDevice.device(), &desc_alloc_info,
+                            &DescriptorSetInBuf);
+   vkAllocateDescriptorSets(lveDevice.device(), &desc_alloc_info,
+                            &DescriptorSetBufOut);
 
-   VkDescriptorSet DescriptorSet = DescriptorSets.front();
-
-   const uint32_t comp_f_index =
-       lveDevice.findPhysicalQueueFamilies().computeFamily;
-   const uint32_t NumElements =
-       initial_img.Width * initial_img.Height * initial_img.Channels;
-   const uint32_t BufferSize = NumElements * sizeof(int32_t);
-
-   VkBufferCreateInfo buf_info = {
-       .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-       .pNext = nullptr,
-       .flags = 0,
-       .size = BufferSize + 1,
-       .usage = VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR,
-       .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-       .queueFamilyIndexCount = 1,
-       .pQueueFamilyIndices = &comp_f_index,
+   VkDescriptorImageInfo initImageInfo = {
+       .imageView = initial_img.ImageView,
+       .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
    };
-
-   VkBuffer InBuffer = {};
-   vkCreateBuffer(lveDevice.device(), &buf_info, nullptr, &InBuffer);
-   VkBuffer OutBuffer = {};
-   vkCreateBuffer(lveDevice.device(), &buf_info, nullptr, &OutBuffer);
-
-   VkMemoryRequirements inReq = {};
-   vkGetBufferMemoryRequirements(lveDevice.device(), InBuffer, &inReq);
-   VkMemoryRequirements outReq = {};
-   vkGetBufferMemoryRequirements(lveDevice.device(), OutBuffer, &outReq);
-
-   VkPhysicalDeviceMemoryProperties phys_mem_props = {};
-   vkGetPhysicalDeviceMemoryProperties(lveDevice.physical_device(),
-                                       &phys_mem_props);
-
-   uint32_t MemoryTypeIndex = uint32_t(~0);
-   VkDeviceSize MemoryHeapSize = uint32_t(~0);
-   for (uint32_t CurrentMemoryTypeIndex = 0;
-        CurrentMemoryTypeIndex < phys_mem_props.memoryTypeCount;
-        ++CurrentMemoryTypeIndex) {
-      VkMemoryType MemoryType =
-          phys_mem_props.memoryTypes[CurrentMemoryTypeIndex];
-      if ((VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT &
-           MemoryType.propertyFlags) &&
-          (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT &
-           MemoryType.propertyFlags)) {
-         MemoryHeapSize =
-             phys_mem_props.memoryHeaps[MemoryType.heapIndex].size;
-         MemoryTypeIndex = CurrentMemoryTypeIndex;
-         break;
-      }
-   }
-
-   std::cout << "Memory Type Index: " << MemoryTypeIndex << std::endl;
-   std::cout << "Memory Heap Size : "
-             << MemoryHeapSize / 1024 / 1024 / 1024 << " GB" << std::endl;
-
-   // Allocate memory
-   VkMemoryAllocateInfo InBufferMemoryAllocateInfo = {
-       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-       .pNext = nullptr,
-       .allocationSize = inReq.size,
-       .memoryTypeIndex = MemoryTypeIndex};
-   VkMemoryAllocateInfo OutBufferMemoryAllocateInfo = {
-       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-       .pNext = nullptr,
-       .allocationSize = outReq.size,
-       .memoryTypeIndex = MemoryTypeIndex};
-
-   VkDeviceMemory InBufferMemory = {};
-   vkAllocateMemory(lveDevice.device(), &InBufferMemoryAllocateInfo,
-                    nullptr, &InBufferMemory);
-
-   VkDeviceMemory OutBufferMemory = {};
-   vkAllocateMemory(lveDevice.device(), &OutBufferMemoryAllocateInfo,
-                    nullptr, &OutBufferMemory);
-
-   // Bind buffers to memory
-   vkBindBufferMemory(lveDevice.device(), InBuffer, InBufferMemory, 0);
-   vkBindBufferMemory(lveDevice.device(), OutBuffer, OutBufferMemory, 0);
-
-   VkDescriptorBufferInfo InBufferInfo = {
-       .buffer = InBuffer,
-       .offset = 0,
-       .range = NumElements * sizeof(int32_t),
+   VkDescriptorImageInfo buffImageInfo = {
+       .imageView = buffer_img.ImageView,
+       .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
    };
-   VkDescriptorBufferInfo OutBufferInfo = {
-       .buffer = OutBuffer,
-       .offset = 0,
-       .range = NumElements * sizeof(int32_t),
+   VkDescriptorImageInfo filteredImageInfo = {
+       .imageView = filtered_img.ImageView,
+       .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
    };
 
    const std::vector<VkWriteDescriptorSet> WriteDescriptorSets = {
        {
            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
            .pNext = nullptr,
-           .dstSet = DescriptorSet,
+           .dstSet = DescriptorSetInOut,
            .dstBinding = 0,
            .dstArrayElement = 0,
            .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-           .pImageInfo = nullptr,
-           .pBufferInfo = &InBufferInfo,
+           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+           .pImageInfo = &initImageInfo,
+           .pBufferInfo = nullptr,
            .pTexelBufferView = nullptr,
        },
        {
            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
            .pNext = nullptr,
-           .dstSet = DescriptorSet,
+           .dstSet = DescriptorSetInOut,
            .dstBinding = 1,
            .dstArrayElement = 0,
            .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-           .pImageInfo = nullptr,
-           .pBufferInfo = &OutBufferInfo,
+           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+           .pImageInfo = &filteredImageInfo,
+           .pBufferInfo = nullptr,
            .pTexelBufferView = nullptr,
        },
+       {
+           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+           .pNext = nullptr,
+           .dstSet = DescriptorSetInBuf,
+           .dstBinding = 0,
+           .dstArrayElement = 0,
+           .descriptorCount = 1,
+           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+           .pImageInfo = &initImageInfo,
+           .pBufferInfo = nullptr,
+           .pTexelBufferView = nullptr,
+       },
+       {
+           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+           .pNext = nullptr,
+           .dstSet = DescriptorSetInBuf,
+           .dstBinding = 1,
+           .dstArrayElement = 0,
+           .descriptorCount = 1,
+           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+           .pImageInfo = &buffImageInfo,
+           .pBufferInfo = nullptr,
+           .pTexelBufferView = nullptr,
+       },
+       {
+           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+           .pNext = nullptr,
+           .dstSet = DescriptorSetBufOut,
+           .dstBinding = 0,
+           .dstArrayElement = 0,
+           .descriptorCount = 1,
+           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+           .pImageInfo = &buffImageInfo,
+           .pBufferInfo = nullptr,
+           .pTexelBufferView = nullptr,
+       },
+       {
+           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+           .pNext = nullptr,
+           .dstSet = DescriptorSetBufOut,
+           .dstBinding = 1,
+           .dstArrayElement = 0,
+           .descriptorCount = 1,
+           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+           .pImageInfo = &filteredImageInfo,
+           .pBufferInfo = nullptr,
+           .pTexelBufferView = nullptr,
+       },
+
    };
-   vkUpdateDescriptorSets(lveDevice.device(), 2,
+   vkUpdateDescriptorSets(lveDevice.device(), WriteDescriptorSets.size(),
                           WriteDescriptorSets.data(), 0, nullptr);
 
-   VkCommandBuffer CmdBuffer = lveDevice.beginSingleTimeCommands();
-   vkCmdBindPipeline(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                     edge_detect.computePipeline);
-   vkCmdBindDescriptorSets(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                           edge_detect.pipelineLayout, 0, 1,
-                           DescriptorSets.data(), 0, nullptr);
-   vkCmdDispatch(CmdBuffer, initial_img.Width, initial_img.Height,
-                 initial_img.Channels);
-   vkEndCommandBuffer(CmdBuffer);
-
    // Fence and submit
+   VkCommandBuffer CmdBuffer;
    VkQueue Queue = lveDevice.computeQueue();
    VkFenceCreateInfo FenceCreateInfo = {
        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -306,25 +277,8 @@ void FirstApp::run() {
        .signalSemaphoreCount = 0,
        .pSignalSemaphores = nullptr,
    };
-   vkQueueSubmit(Queue, 1, &SubmitInfo, Fence);
-   vkWaitForFences(lveDevice.device(), 1, &Fence, true, uint64_t(-1));
 
-   CmdBuffer = lveDevice.beginSingleTimeCommands();
-   vkCmdBindPipeline(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                     blur_filter.computePipeline);
-   vkCmdBindDescriptorSets(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                           blur_filter.pipelineLayout, 0, 1,
-                           DescriptorSets.data(), 0, nullptr);
-   vkCmdDispatch(CmdBuffer, initial_img.Width, initial_img.Height,
-                 initial_img.Channels);
-   vkEndCommandBuffer(CmdBuffer);
-
-   // Fence and submit
-	vkResetFences(lveDevice.device(), 1, &Fence);
-   vkQueueSubmit(Queue, 1, &SubmitInfo, Fence);
-   vkWaitForFences(lveDevice.device(), 1, &Fence, true, uint64_t(-1));
-
-   // Hasta aca^^^^^^^^^ Aca deberian estar ambos filtros aplicados
+   // Hasta aca^^^^^^^^^
 
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
@@ -375,18 +329,38 @@ void FirstApp::run() {
          lveRenderer.endSwapChainRenderPass(commandBuffer);
          lveRenderer.endFrame();
       }
+
+      int shader_count = myimgui.get_shader_count();
+		if (shader_count == 0) {
+         compute(CmdBuffer, lveDevice, no_filter, initial_img.Width,
+                 initial_img.Height, initial_img.Channels, DescriptorSetInOut,
+                 Fence, Queue, SubmitInfo);
+		}
+      if (shader_count > 0) {
+         ComputeSystem &first =
+             myimgui.get_first_shader() ? blur_filter : edge_detect;
+         VkDescriptorSet &DescriptorSet =
+             shader_count == 1 ? DescriptorSetInOut : DescriptorSetInBuf;
+         compute(CmdBuffer, lveDevice, first, initial_img.Width,
+                 initial_img.Height, initial_img.Channels, DescriptorSet,
+                 Fence, Queue, SubmitInfo);
+      }
+      if (shader_count > 1) {
+         ComputeSystem &second =
+             myimgui.get_second_shader() ? blur_filter : edge_detect;
+         compute(CmdBuffer, lveDevice, second, initial_img.Width,
+                 initial_img.Height, initial_img.Channels,
+                 DescriptorSetBufOut, Fence, Queue, SubmitInfo);
+      }
    }
 
    vkDeviceWaitIdle(lveDevice.device());
    RemoveTexture(&initial_img, lveDevice);
+   RemoveTexture(&buffer_img, lveDevice);
    RemoveTexture(&filtered_img, lveDevice);
    vkDestroyFence(lveDevice.device(), Fence, nullptr);
    vkDestroyDescriptorSetLayout(lveDevice.device(), desc_lay[0], nullptr);
    vkDestroyDescriptorPool(lveDevice.device(), desc_pool, nullptr);
-   vkFreeMemory(lveDevice.device(), InBufferMemory, nullptr);
-   vkFreeMemory(lveDevice.device(), OutBufferMemory, nullptr);
-   vkDestroyBuffer(lveDevice.device(), InBuffer, nullptr);
-   vkDestroyBuffer(lveDevice.device(), OutBuffer, nullptr);
 }
 
 void FirstApp::loadGameObjects() {
@@ -440,6 +414,26 @@ void FirstApp::loadGameObjects() {
 
       gameObjects.emplace(pointLight.getId(), std::move(pointLight));
    }
+}
+
+void FirstApp::compute(VkCommandBuffer &CmdBuffer, LveDevice &lveDevice,
+                       ComputeSystem &compSys, int width, int height,
+                       int channels, VkDescriptorSet &DescriptorSet,
+                       VkFence &Fence, VkQueue &Queue,
+                       VkSubmitInfo &SubmitInfo) {
+   CmdBuffer = lveDevice.beginSingleTimeCommands();
+   vkCmdBindPipeline(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                     compSys.computePipeline);
+   vkCmdBindDescriptorSets(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                           compSys.pipelineLayout, 0, 1, &DescriptorSet, 0,
+                           nullptr);
+   vkCmdDispatch(CmdBuffer, width, height, channels);
+   vkEndCommandBuffer(CmdBuffer);
+
+   // Fence and submit
+   vkResetFences(lveDevice.device(), 1, &Fence);
+   vkQueueSubmit(Queue, 1, &SubmitInfo, Fence);
+   vkWaitForFences(lveDevice.device(), 1, &Fence, true, uint64_t(-1));
 }
 
 }  // namespace lve
