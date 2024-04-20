@@ -9,7 +9,6 @@
 #include "lve/lve_game_object.hpp"
 #include "lve/lve_renderer.hpp"
 #include "lve/lve_window.hpp"
-#include "systems/compute_system.hpp"
 
 namespace lve {
 
@@ -28,10 +27,6 @@ class FirstApp {
 
   private:
    void loadGameObjects();
-   void compute(VkCommandBuffer &CmdBuffer, LveDevice &lveDevice,
-                ComputeSystem &compSys, int width, int height,
-                int channels, VkDescriptorSet &DescriptorSet,
-                VkFence &Fence, VkQueue &Queue, VkSubmitInfo &SubmitInfo);
 
    LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
    LveDevice lveDevice{lveWindow};
@@ -39,6 +34,7 @@ class FirstApp {
 
    std::unique_ptr<LveDescriptorPool> globalPool{};
    std::unique_ptr<LveDescriptorPool> imguiPool{};
+   std::unique_ptr<LveDescriptorPool> computePool{};
    LveGameObject::Map gameObjects;
 };
 }  // namespace lve

@@ -47,6 +47,11 @@ FirstApp::FirstApp() {
            .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
            .build();
 
+   computePool = LveDescriptorPool::Builder(lveDevice)
+                     .setMaxSets(3)
+                     .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 6)
+                     .build();
+
    loadGameObjects();
 }
 
@@ -64,7 +69,7 @@ void FirstApp::run() {
       uboBuffers[i]->map();
    }
 
-   auto globalSetLayout =
+   std::unique_ptr<LveDescriptorSetLayout> globalSetLayout =
        LveDescriptorSetLayout::Builder(lveDevice)
            .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                        VK_SHADER_STAGE_ALL_GRAPHICS)
@@ -107,63 +112,31 @@ void FirstApp::run() {
    ret = LoadTextureFromFile("Fondo.jpg", &filtered_img, lveDevice);
    IM_ASSERT(ret);
 
-   // Veeer vvvvvvvv hay un Builder
-   const std::vector<VkDescriptorSetLayoutBinding> desc_lay_bind = {
-       {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
-        VK_SHADER_STAGE_COMPUTE_BIT},
-       {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
-        VK_SHADER_STAGE_COMPUTE_BIT}};
+   std::unique_ptr<LveDescriptorSetLayout>
+       computeFilterDescriptorSetLayout =
+           LveDescriptorSetLayout::Builder(lveDevice)
+               .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                           VK_SHADER_STAGE_COMPUTE_BIT)
+               .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                           VK_SHADER_STAGE_COMPUTE_BIT)
+               .build();
 
-   VkDescriptorSetLayoutCreateInfo desc_lay_info = {};
-   desc_lay_info.sType =
-       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-   desc_lay_info.pNext = nullptr;
-   desc_lay_info.flags = 0;
-   desc_lay_info.bindingCount = desc_lay_bind.size();
-   desc_lay_info.pBindings = desc_lay_bind.data();
-
-   std::vector<VkDescriptorSetLayout> desc_lay = {};
-   desc_lay.resize(1);
-   vkCreateDescriptorSetLayout(lveDevice.device(), &desc_lay_info, nullptr,
-                               &desc_lay[0]);
-   // Hasta aca^^^^^^^^^
-
-   ComputeSystem edge_detect{lveDevice, desc_lay,
-                             "shaders/edges.comp.spv"};
-   ComputeSystem blur_filter{lveDevice, desc_lay, "shaders/blur.comp.spv"};
-   ComputeSystem no_filter{lveDevice, desc_lay, "shaders/no_filter.comp.spv"};
-
-   // Ver esto tmb
-   VkDescriptorPoolSize desc_pool_size = {
-       .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 6};
-   VkDescriptorPoolCreateInfo desc_pool_info = {
-       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-       .pNext = nullptr,
-       .flags = 0,
-       .maxSets = 3,
-       .poolSizeCount = 1,
-       .pPoolSizes = &desc_pool_size,
-   };
-   VkDescriptorPool desc_pool = {};
-   vkCreateDescriptorPool(lveDevice.device(), &desc_pool_info, nullptr,
-                          &desc_pool);
-
-   VkDescriptorSetAllocateInfo desc_alloc_info = {
-       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-       .pNext = nullptr,
-       .descriptorPool = desc_pool,
-       .descriptorSetCount = 1,
-       .pSetLayouts = desc_lay.data()};
+   ComputeSystem edge_detect{
+       lveDevice,
+       {computeFilterDescriptorSetLayout->getDescriptorSetLayout()},
+       "shaders/edges.comp.spv"};
+   ComputeSystem blur_filter{
+       lveDevice,
+       {computeFilterDescriptorSetLayout->getDescriptorSetLayout()},
+       "shaders/blur.comp.spv"};
+   ComputeSystem no_filter{
+       lveDevice,
+       {computeFilterDescriptorSetLayout->getDescriptorSetLayout()},
+       "shaders/no_filter.comp.spv"};
 
    VkDescriptorSet DescriptorSetInOut = {};
    VkDescriptorSet DescriptorSetInBuf = {};
    VkDescriptorSet DescriptorSetBufOut = {};
-   vkAllocateDescriptorSets(lveDevice.device(), &desc_alloc_info,
-                            &DescriptorSetInOut);
-   vkAllocateDescriptorSets(lveDevice.device(), &desc_alloc_info,
-                            &DescriptorSetInBuf);
-   vkAllocateDescriptorSets(lveDevice.device(), &desc_alloc_info,
-                            &DescriptorSetBufOut);
 
    VkDescriptorImageInfo initImageInfo = {
        .imageView = initial_img.ImageView,
@@ -178,107 +151,20 @@ void FirstApp::run() {
        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
    };
 
-   const std::vector<VkWriteDescriptorSet> WriteDescriptorSets = {
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = DescriptorSetInOut,
-           .dstBinding = 0,
-           .dstArrayElement = 0,
-           .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-           .pImageInfo = &initImageInfo,
-           .pBufferInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = DescriptorSetInOut,
-           .dstBinding = 1,
-           .dstArrayElement = 0,
-           .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-           .pImageInfo = &filteredImageInfo,
-           .pBufferInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = DescriptorSetInBuf,
-           .dstBinding = 0,
-           .dstArrayElement = 0,
-           .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-           .pImageInfo = &initImageInfo,
-           .pBufferInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = DescriptorSetInBuf,
-           .dstBinding = 1,
-           .dstArrayElement = 0,
-           .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-           .pImageInfo = &buffImageInfo,
-           .pBufferInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = DescriptorSetBufOut,
-           .dstBinding = 0,
-           .dstArrayElement = 0,
-           .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-           .pImageInfo = &buffImageInfo,
-           .pBufferInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = DescriptorSetBufOut,
-           .dstBinding = 1,
-           .dstArrayElement = 0,
-           .descriptorCount = 1,
-           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-           .pImageInfo = &filteredImageInfo,
-           .pBufferInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
+   LveDescriptorWriter(*computeFilterDescriptorSetLayout, *computePool)
+       .writeImage(0, &initImageInfo)
+       .writeImage(1, &filteredImageInfo)
+       .build(DescriptorSetInOut);
 
-   };
-   vkUpdateDescriptorSets(lveDevice.device(), WriteDescriptorSets.size(),
-                          WriteDescriptorSets.data(), 0, nullptr);
+   LveDescriptorWriter(*computeFilterDescriptorSetLayout, *computePool)
+       .writeImage(0, &initImageInfo)
+       .writeImage(1, &buffImageInfo)
+       .build(DescriptorSetInBuf);
 
-   // Fence and submit
-   VkCommandBuffer CmdBuffer;
-   VkQueue Queue = lveDevice.computeQueue();
-   VkFenceCreateInfo FenceCreateInfo = {
-       .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-       .pNext = nullptr,
-       .flags = 0,
-   };
-   VkFence Fence = {};
-   vkCreateFence(lveDevice.device(), &FenceCreateInfo, nullptr, &Fence);
-   VkSubmitInfo SubmitInfo = {
-       .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-       .pNext = nullptr,
-       .waitSemaphoreCount = 0,
-       .pWaitSemaphores = nullptr,
-       .pWaitDstStageMask = nullptr,
-       .commandBufferCount = 1,
-       .pCommandBuffers = &CmdBuffer,
-       .signalSemaphoreCount = 0,
-       .pSignalSemaphores = nullptr,
-   };
-
-   // Hasta aca^^^^^^^^^
+   LveDescriptorWriter(*computeFilterDescriptorSetLayout, *computePool)
+       .writeImage(0, &buffImageInfo)
+       .writeImage(1, &filteredImageInfo)
+       .build(DescriptorSetBufOut);
 
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
@@ -331,26 +217,23 @@ void FirstApp::run() {
       }
 
       int shader_count = myimgui.get_shader_count();
-		if (shader_count == 0) {
-         compute(CmdBuffer, lveDevice, no_filter, initial_img.Width,
-                 initial_img.Height, initial_img.Channels, DescriptorSetInOut,
-                 Fence, Queue, SubmitInfo);
-		}
+      if (shader_count == 0) {
+         no_filter.instant_dispatch(initial_img.Width, initial_img.Height,
+                            initial_img.Channels, DescriptorSetInOut);
+      }
       if (shader_count > 0) {
          ComputeSystem &first =
              myimgui.get_first_shader() ? blur_filter : edge_detect;
          VkDescriptorSet &DescriptorSet =
              shader_count == 1 ? DescriptorSetInOut : DescriptorSetInBuf;
-         compute(CmdBuffer, lveDevice, first, initial_img.Width,
-                 initial_img.Height, initial_img.Channels, DescriptorSet,
-                 Fence, Queue, SubmitInfo);
+         first.instant_dispatch(initial_img.Width, initial_img.Height,
+                        initial_img.Channels, DescriptorSet);
       }
       if (shader_count > 1) {
          ComputeSystem &second =
              myimgui.get_second_shader() ? blur_filter : edge_detect;
-         compute(CmdBuffer, lveDevice, second, initial_img.Width,
-                 initial_img.Height, initial_img.Channels,
-                 DescriptorSetBufOut, Fence, Queue, SubmitInfo);
+         second.instant_dispatch(initial_img.Width, initial_img.Height,
+                         initial_img.Channels, DescriptorSetBufOut);
       }
    }
 
@@ -358,9 +241,6 @@ void FirstApp::run() {
    RemoveTexture(&initial_img, lveDevice);
    RemoveTexture(&buffer_img, lveDevice);
    RemoveTexture(&filtered_img, lveDevice);
-   vkDestroyFence(lveDevice.device(), Fence, nullptr);
-   vkDestroyDescriptorSetLayout(lveDevice.device(), desc_lay[0], nullptr);
-   vkDestroyDescriptorPool(lveDevice.device(), desc_pool, nullptr);
 }
 
 void FirstApp::loadGameObjects() {
@@ -414,26 +294,6 @@ void FirstApp::loadGameObjects() {
 
       gameObjects.emplace(pointLight.getId(), std::move(pointLight));
    }
-}
-
-void FirstApp::compute(VkCommandBuffer &CmdBuffer, LveDevice &lveDevice,
-                       ComputeSystem &compSys, int width, int height,
-                       int channels, VkDescriptorSet &DescriptorSet,
-                       VkFence &Fence, VkQueue &Queue,
-                       VkSubmitInfo &SubmitInfo) {
-   CmdBuffer = lveDevice.beginSingleTimeCommands();
-   vkCmdBindPipeline(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                     compSys.computePipeline);
-   vkCmdBindDescriptorSets(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                           compSys.pipelineLayout, 0, 1, &DescriptorSet, 0,
-                           nullptr);
-   vkCmdDispatch(CmdBuffer, width, height, channels);
-   vkEndCommandBuffer(CmdBuffer);
-
-   // Fence and submit
-   vkResetFences(lveDevice.device(), 1, &Fence);
-   vkQueueSubmit(Queue, 1, &SubmitInfo, Fence);
-   vkWaitForFences(lveDevice.device(), 1, &Fence, true, uint64_t(-1));
 }
 
 }  // namespace lve

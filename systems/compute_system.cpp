@@ -3,27 +3,54 @@
 #include <vulkan/vulkan_core.h>
 
 #include <cassert>
+#include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <vector>
-#include <iostream>
-#include <fstream>
 
 namespace lve {
 
 ComputeSystem::ComputeSystem(
     LveDevice &device,
     const std::vector<VkDescriptorSetLayout> desc_layout,
-    const std::string& compFilepath)
-    : lveDevice(device) {
+    const std::string &compFilepath)
+    : lveDevice(device),
+      CmdBuffer{},
+      submitInfo{
+          .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+          .pNext = nullptr,
+          .waitSemaphoreCount = 0,
+          .pWaitSemaphores = nullptr,
+          .pWaitDstStageMask = nullptr,
+          .commandBufferCount = 1,
+          .pCommandBuffers = &CmdBuffer,
+          .signalSemaphoreCount = 0,
+          .pSignalSemaphores = nullptr,
+      } {
+   createFence();
    createPipelineLayout(desc_layout);
-	createShaderModule(compFilepath);
+   createShaderModule(compFilepath);
    createPipeline();
 }
 
 ComputeSystem::~ComputeSystem() {
-	vkDestroyPipeline(lveDevice.device(), computePipeline, nullptr);
-	vkDestroyShaderModule(lveDevice.device(), module, nullptr);
+   vkDestroyPipeline(lveDevice.device(), computePipeline, nullptr);
+   vkDestroyShaderModule(lveDevice.device(), module, nullptr);
    vkDestroyPipelineLayout(lveDevice.device(), pipelineLayout, nullptr);
+   vkDestroyFence(lveDevice.device(), Fence, nullptr);
+}
+
+void ComputeSystem::createFence() {
+   VkFenceCreateInfo FenceCreateInfo = {
+       .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+       .pNext = nullptr,
+       .flags = 0,
+   };
+
+   if (vkCreateFence(lveDevice.device(), &FenceCreateInfo, nullptr,
+                     &this->Fence)) {
+      throw std::runtime_error("failed to create pipeline layout!");
+   }
 }
 
 void ComputeSystem::createPipelineLayout(
@@ -66,20 +93,19 @@ void ComputeSystem::createPipeline() {
    pipelineCreateInfo.basePipelineIndex = -1;
    pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateComputePipelines(lveDevice.device(), VK_NULL_HANDLE, 1,
-                                 &pipelineCreateInfo, nullptr,
-                                 &computePipeline) != VK_SUCCESS) {
+   if (vkCreateComputePipelines(lveDevice.device(), VK_NULL_HANDLE, 1,
+                                &pipelineCreateInfo, nullptr,
+                                &computePipeline) != VK_SUCCESS) {
       throw std::runtime_error("failed to create compute pipeline");
    }
-
 }
 
-void ComputeSystem::createShaderModule(const std::string& compFilepath) {
+void ComputeSystem::createShaderModule(const std::string &compFilepath) {
    auto compCode = readFile(compFilepath);
    VkShaderModuleCreateInfo createInfo{};
    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
    createInfo.codeSize = compCode.size();
-   createInfo.pCode = reinterpret_cast<const uint32_t*>(compCode.data());
+   createInfo.pCode = reinterpret_cast<const uint32_t *>(compCode.data());
 
    if (vkCreateShaderModule(lveDevice.device(), &createInfo, nullptr,
                             &module) != VK_SUCCESS) {
@@ -87,7 +113,7 @@ void ComputeSystem::createShaderModule(const std::string& compFilepath) {
    }
 }
 
-std::vector<char> ComputeSystem::readFile(const std::string& filepath) {
+std::vector<char> ComputeSystem::readFile(const std::string &filepath) {
    std::ifstream file{filepath, std::ios::ate | std::ios::binary};
 
    if (!file.is_open()) {
@@ -103,6 +129,32 @@ std::vector<char> ComputeSystem::readFile(const std::string& filepath) {
    file.close();
 
    return buffer;
+}
+
+void ComputeSystem::dispatch(int width, int height, int channels,
+                             VkDescriptorSet &DescriptorSet) {
+   CmdBuffer = lveDevice.beginSingleTimeCommands();
+   vkCmdBindPipeline(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                     this->computePipeline);
+   vkCmdBindDescriptorSets(CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                           this->pipelineLayout, 0, 1, &DescriptorSet, 0,
+                           nullptr);
+   vkCmdDispatch(CmdBuffer, width, height, channels);
+   vkEndCommandBuffer(CmdBuffer);
+}
+
+void ComputeSystem::await() {
+   VkQueue Queue = lveDevice.computeQueue();
+   vkResetFences(lveDevice.device(), 1, &this->Fence);
+   vkQueueSubmit(Queue, 1, &this->submitInfo, this->Fence);
+   vkWaitForFences(lveDevice.device(), 1, &this->Fence, true,
+                   uint64_t(-1));
+}
+
+void ComputeSystem::instant_dispatch(int width, int height, int channels,
+                                     VkDescriptorSet &DescriptorSet) {
+   dispatch(width, height, channels, DescriptorSet);
+   await();
 }
 
 }  // namespace lve
