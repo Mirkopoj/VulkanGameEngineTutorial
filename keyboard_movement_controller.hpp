@@ -2,9 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "lve/lve_device.hpp"
 #include "lve/lve_game_object.hpp"
-#include "lve/lve_window.hpp"
 
 namespace lve {
 
@@ -15,12 +13,12 @@ class KeyboardMovementController {
       int moveRight = GLFW_KEY_D;
       int moveForward = GLFW_KEY_W;
       int moveBackward = GLFW_KEY_S;
-      int moveUp = GLFW_KEY_E;
-      int moveDown = GLFW_KEY_Q;
-      int lookLeft = GLFW_KEY_LEFT;
-      int lookRight = GLFW_KEY_RIGHT;
-      int lookUp = GLFW_KEY_UP;
-      int lookDown = GLFW_KEY_DOWN;
+      int moveUp = GLFW_KEY_SPACE;
+      int moveDown = GLFW_KEY_LEFT_SHIFT;
+      int moveLeft2 = GLFW_KEY_LEFT;
+      int moveRight2 = GLFW_KEY_RIGHT;
+      int moveForward2 = GLFW_KEY_UP;
+      int moveBackward2 = GLFW_KEY_DOWN;
    };
 
    void moveInPlaneXZ(GLFWwindow* window, float dt,
@@ -28,7 +26,11 @@ class KeyboardMovementController {
 
    KeyMappings keys{};
    float moveSpeed{3.f};
-   float lookSpeed{1.5f};
+   float lookSpeed{2.5f};
+   bool normalMouse{true};
+   bool changedMouse{false};
+	double lastX;
+	double lastY;
 };
 
 }  // namespace lve
