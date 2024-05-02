@@ -1,0 +1,38 @@
+#pragma once
+
+#include <vulkan/vulkan_core.h>
+
+#include <memory>
+
+#include "../lve/lve_device.hpp"
+#include "../lve/lve_pipeline.hpp"
+
+#include "../apps/second_app_frame_info.hpp"
+
+namespace lve {
+
+class TerrainRenderSystem {
+  public:
+   TerrainRenderSystem(LveDevice &device, VkRenderPass renderPass,
+                      VkDescriptorSetLayout globalSetLayout,
+                      const std::string &vertFilepath,
+                      const std::string &fragFilepath);
+   ~TerrainRenderSystem();
+
+   TerrainRenderSystem(const TerrainRenderSystem &) = delete;
+   TerrainRenderSystem &operator=(const TerrainRenderSystem &) = delete;
+
+   void renderTerrain(FrameInfo &frameInfo);
+
+  private:
+   void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+   void createPipeline(VkRenderPass renderPass,
+                       const std::string &vertFilepath,
+                       const std::string &fragFilepath);
+
+   LveDevice &lveDevice;
+
+   std::unique_ptr<LvePipeline> lvePipeline;
+   VkPipelineLayout pipelineLayout;
+};
+}  // namespace lve

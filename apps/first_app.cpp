@@ -7,18 +7,18 @@
 #include <memory>
 #include <vector>
 
-#include "keyboard_movement_controller.hpp"
-#include "lve/lve_buffer.hpp"
-#include "lve/lve_camera.hpp"
-#include "lve/lve_descriptors.hpp"
-#include "lve/lve_device.hpp"
-#include "lve/lve_frame_info.hpp"
-#include "lve/lve_game_object.hpp"
-#include "lve/lve_swap_chain.hpp"
-#include "systems/compute_system.hpp"
-#include "systems/imgui_system.hpp"
-#include "systems/point_light_system.hpp"
-#include "systems/simple_render_system.hpp"
+#include "../keyboard_movement_controller.hpp"
+#include "../lve/lve_buffer.hpp"
+#include "../lve/lve_camera.hpp"
+#include "../lve/lve_descriptors.hpp"
+#include "../lve/lve_device.hpp"
+#include "../lve/lve_frame_info.hpp"
+#include "../lve/lve_game_object.hpp"
+#include "../lve/lve_swap_chain.hpp"
+#include "../systems/compute_system.hpp"
+#include "../systems/imgui_system.hpp"
+#include "../systems/point_light_system.hpp"
+#include "../systems/simple_render_system.hpp"
 
 // libs
 #define GLM_FORCE_RADIANS
@@ -219,7 +219,8 @@ void FirstApp::run() {
       int shader_count = myimgui.get_shader_count();
       if (shader_count == 0) {
          no_filter.instant_dispatch(initial_img.Width, initial_img.Height,
-                            initial_img.Channels, DescriptorSetInOut);
+                                    initial_img.Channels,
+                                    DescriptorSetInOut);
       }
       if (shader_count > 0) {
          ComputeSystem &first =
@@ -227,13 +228,14 @@ void FirstApp::run() {
          VkDescriptorSet &DescriptorSet =
              shader_count == 1 ? DescriptorSetInOut : DescriptorSetInBuf;
          first.instant_dispatch(initial_img.Width, initial_img.Height,
-                        initial_img.Channels, DescriptorSet);
+                                initial_img.Channels, DescriptorSet);
       }
       if (shader_count > 1) {
          ComputeSystem &second =
              myimgui.get_second_shader() ? blur_filter : edge_detect;
          second.instant_dispatch(initial_img.Width, initial_img.Height,
-                         initial_img.Channels, DescriptorSetBufOut);
+                                 initial_img.Channels,
+                                 DescriptorSetBufOut);
       }
    }
 

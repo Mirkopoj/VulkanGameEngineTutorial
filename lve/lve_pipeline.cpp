@@ -10,7 +10,6 @@
 #include <stdexcept>
 
 #include "lve_model.hpp"
-#include "lve_window.hpp"
 
 namespace lve {
 

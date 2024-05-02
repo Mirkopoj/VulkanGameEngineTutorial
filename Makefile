@@ -10,26 +10,31 @@ fragSources = $(shell find ./shaders -type f -name "*.frag")
 fragObjFiles = $(patsubst %.frag, %.frag.spv, $(fragSources))
 compSources = $(shell find ./shaders -type f -name "*.comp")
 compObjFiles = $(patsubst %.comp, %.comp.spv, $(compSources))
-SRCS = $(shell find -type f -name "*.cpp")
+SRCS = $(shell find -type f -name "*.cpp" -not -path "*/mains/*")
 OBJS = $(patsubst ./%.cpp, obj/%.o, $(SRCS))
+MAINOUTS = FirstApp SecondApp
 
-TARGET = VulkanTest
-$(TARGET): $(vertObjFiles) $(fragObjFiles) $(compObjFiles)
-$(TARGET): $(OBJS)
-	g++ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+$(MAINOUTS): $(OBJS) $(vertObjFiles) $(fragObjFiles) $(compObjFiles)
+	@mkdir -p bin
+	@mkdir -p obj/mains
+	g++ $(CFLAGS) -c mains/$@.cpp -o obj/mains/$@.o
+	g++ $(CFLAGS) -o bin/$@ obj/mains/$@.o $(OBJS) $(LDFLAGS)
 obj/%.o: %.cpp
 	@mkdir -p $(@D)
-	g++ $(CFLAGS) -c $< -o $@ $(LDFLAGS)
+	g++ $(CFLAGS) -c $< -o $@ 
 
 %.spv: %
 	glslc $< -o $@
 
 .PHONY: test clean
 
-test: VulkanTest
-	./VulkanTest
+test1: FirstApp
+	bin/FirstApp
+
+test2: SecondApp
+	bin/SecondApp
 
 clean:
-	rm -f VulkanTest
+	rm -rf bin/
 	rm -f shaders/*.spv
 	rm -rf obj/

@@ -4,11 +4,11 @@
 
 #include <memory>
 
-#include "lve/lve_descriptors.hpp"
-#include "lve/lve_device.hpp"
-#include "lve/lve_game_object.hpp"
-#include "lve/lve_renderer.hpp"
-#include "lve/lve_window.hpp"
+#include "../lve/lve_descriptors.hpp"
+#include "../lve/lve_device.hpp"
+#include "../lve/lve_game_object.hpp"
+#include "../lve/lve_renderer.hpp"
+#include "../lve/lve_window.hpp"
 
 namespace lve {
 

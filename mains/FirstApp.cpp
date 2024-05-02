@@ -1,9 +1,8 @@
 #include <cstdlib>
 #include <exception>
 #include <iostream>
-#include <stdexcept>
 
-#include "first_app.hpp"
+#include "../apps/first_app.hpp"
 
 int main() {
    lve::FirstApp app{};

@@ -3,9 +3,17 @@
 #include <vulkan/vulkan.h>
 
 #include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
 
-#include "lve_camera.hpp"
-#include "lve_game_object.hpp"
+#include "../lve/lve_camera.hpp"
+#include "../lve/lve_game_object.hpp"
+
+// libs
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+
 
 namespace lve {
 
@@ -33,5 +41,6 @@ struct FrameInfo {
    VkDescriptorSet globalDescriptorSet;
    LveGameObject::Map &gameObjects;
 };
+
 
 }  // namespace lve
