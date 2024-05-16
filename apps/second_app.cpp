@@ -32,7 +32,7 @@
 
 namespace lve {
 
-SecondApp::SecondApp() {
+SecondApp::SecondApp(int xn, int yn) : xn(xn), yn(yn) {
    globalPool = LveDescriptorPool::Builder(lveDevice)
                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -80,7 +80,8 @@ void SecondApp::run() {
    LveCamera camera{};
 
    auto viewerObject = LveGameObject::createGameObject();
-   viewerObject.transform.translation.z = -2.5f;
+   viewerObject.transform.translation.x = static_cast<float>(xn-1) / 2.f;
+   viewerObject.transform.translation.z = static_cast<float>(yn-1) / 2.f;
    KeyboardMovementController cameraController{};
 
    auto currentTime = std::chrono::high_resolution_clock::now();
@@ -118,7 +119,7 @@ void SecondApp::run() {
          ubo.projection = camera.getProjection();
          ubo.view = camera.getView();
          ubo.inverseView = camera.getInverseView();
-         ubo.cols = 5;
+         ubo.cols = xn;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
 
@@ -136,14 +137,16 @@ void SecondApp::run() {
 }
 
 void SecondApp::loadGameObjects() {
-   std::vector<std::vector<float>> altitudeMap = {};
-   for (int x = 0; x < 5; ++x) {
-      std::vector<float> aux = {};
-      for (int y = 0; y < 5; ++y) {
-         aux.push_back(static_cast<float>(rand() % 4) / 3.f);
+   std::vector<std::vector<glm::float32>> altitudeMap = {};
+   for (int x = 0; x < xn; ++x) {
+      std::vector<glm::float32> aux = {};
+      for (int y = 0; y < yn; ++y) {
+         glm::float32 alt{static_cast<float>(rand() % 1000) / 599.f};
+         aux.push_back(alt);
       }
       altitudeMap.push_back(aux);
    }
+
    terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap);
 }
 

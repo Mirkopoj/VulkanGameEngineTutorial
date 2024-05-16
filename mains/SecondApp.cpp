@@ -4,8 +4,11 @@
 
 #include "../apps/second_app.hpp"
 
-int main() {
-   lve::SecondApp app{};
+int main(int argc, char* argv[]) {
+   lve::SecondApp app{
+		atoi(argv[1]),
+		atoi(argv[2])
+	};
 
    try {
       app.run();

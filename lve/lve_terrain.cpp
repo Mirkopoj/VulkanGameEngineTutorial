@@ -1,12 +1,12 @@
 #include "lve_terrain.hpp"
 
+#include <strings.h>
 #include <vulkan/vulkan_core.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/geometric.hpp>
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -32,7 +32,7 @@ LveTerrain::~LveTerrain() {
 
 std::unique_ptr<LveTerrain> LveTerrain::createModelFromMesh(
     LveDevice &device,
-    const std::vector<std::vector<float>> alttitudeMap) {
+    const std::vector<std::vector<glm::float32>> alttitudeMap) {
    Builder builder{};
    builder.generateMesh(alttitudeMap);
 
@@ -130,7 +130,7 @@ LveTerrain::Vertex::getAttributeDescriptions() {
    std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
    attributeDescriptions.push_back(
-       {0, 0, VK_FORMAT_R16_SFLOAT, offsetof(Vertex, alttitude)});
+       {0, 0, VK_FORMAT_R32_SFLOAT, offsetof(Vertex, alttitude)});
    attributeDescriptions.push_back(
        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
    attributeDescriptions.push_back(
@@ -139,14 +139,45 @@ LveTerrain::Vertex::getAttributeDescriptions() {
    return attributeDescriptions;
 }
 
+// Temporal
+glm::vec3 color(float x, float y, uint32_t xn, uint32_t yn) {
+   float index_n = x + y;
+   index_n /= xn + yn - 2;
+   glm::vec3 color;
+   float a = (1 - index_n) / 0.2;
+   int X = a;
+   float Y = 255.f * (a - (float)X);
+   switch (X) {
+      case 0:
+         color = {255.0, Y, 0.0};
+         break;
+      case 1:
+         color = {255.0 - Y, 255.0, 0.0};
+         break;
+      case 2:
+         color = {0.0, 255.0, Y};
+         break;
+      case 3:
+         color = {0.0, 255.0 - Y, 255.0};
+         break;
+      case 4:
+         color = {Y, 0.0, 255.0};
+         break;
+      case 5:
+         color = {255.0, 0.0, 255.0};
+         break;
+   }
+   color /= 255.0;
+   return color;
+}
+
 void LveTerrain::Builder::generateMesh(
-    const std::vector<std::vector<float>> alttitudeMap) {
+    const std::vector<std::vector<glm::float32>> alttitudeMap) {
    vertices.clear();
    indices.clear();
 
    uint32_t xn = alttitudeMap.size();
    uint32_t yn = alttitudeMap[0].size();
-   std::cout << xn << "x" << yn << "\n";
    uint32_t total_verts = yn + (xn - 1) * (2 * yn - 2);
    uint32_t n = 4 * xn - 2;
 
@@ -160,7 +191,6 @@ void LveTerrain::Builder::generateMesh(
       uint32_t x = d * (xn - 1) + s * (((r + d) / 2) % xn);
 
       uint32_t index = x + y * xn;
-		std::cout << "x: " << x << ", y:" << y << "\n";
 
       uint32_t xs = x == xn - 1 ? x : x + 1;
       uint32_t xa = x == 0 ? x : x - 1;
@@ -186,7 +216,7 @@ void LveTerrain::Builder::generateMesh(
       glm::vec3 normal = (n1 + n2 + n3 + n4) / 4.f;
 
       Vertex vertex = {.alttitude = alttitudeMap[x][y],
-                       .color = {1.f, 1.f, 1.f},
+                       .color = color(x, y, xn, yn),
                        .normal = normal};
 
       vertices.push_back(vertex);

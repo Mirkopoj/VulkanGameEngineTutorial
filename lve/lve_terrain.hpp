@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/fwd.hpp>
 #include <memory>
 #include <vector>
 
@@ -15,7 +16,7 @@ namespace lve {
 class LveTerrain {
   public:
    struct Vertex {
-      float alttitude{};
+		glm::float32 alttitude{};
       glm::vec3 color{};
       glm::vec3 normal{};
 
@@ -30,7 +31,7 @@ class LveTerrain {
       std::vector<uint32_t> indices{};
 
       void generateMesh(
-          const std::vector<std::vector<float>> alttitudeMap);
+          const std::vector<std::vector<glm::float32>> alttitudeMap);
    };
 
    LveTerrain(LveDevice &device, const LveTerrain::Builder &builder);
@@ -41,7 +42,7 @@ class LveTerrain {
 
    static std::unique_ptr<LveTerrain> createModelFromMesh(
        LveDevice &device,
-       const std::vector<std::vector<float>> alttitudeMap);
+       const std::vector<std::vector<glm::float32>> alttitudeMap);
 
    void bind(VkCommandBuffer commandBuffer);
    void draw(VkCommandBuffer commandBuffer);

@@ -6,8 +6,8 @@
 
 #include "../lve/lve_descriptors.hpp"
 #include "../lve/lve_device.hpp"
-#include "../lve/lve_terrain.hpp"
 #include "../lve/lve_renderer.hpp"
+#include "../lve/lve_terrain.hpp"
 #include "../lve/lve_window.hpp"
 namespace lve {
 
@@ -16,7 +16,7 @@ class SecondApp {
    static constexpr int WIDTH = 800;
    static constexpr int HEIGHT = 600;
 
-   SecondApp();
+   SecondApp(int, int);
    ~SecondApp();
 
    SecondApp(const SecondApp &) = delete;
@@ -32,6 +32,8 @@ class SecondApp {
    LveRenderer lveRenderer{lveWindow, lveDevice};
 
    std::unique_ptr<LveDescriptorPool> globalPool{};
-	std::unique_ptr<LveTerrain> terrain;
+   std::unique_ptr<LveTerrain> terrain;
+	int xn;
+	int yn;
 };
 }  // namespace lve

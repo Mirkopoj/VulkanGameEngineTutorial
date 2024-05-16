@@ -29,10 +29,10 @@ obj/%.o: %.cpp
 .PHONY: test clean
 
 test1: FirstApp
-	bin/FirstApp
+	bin/FirstApp $(ARGS)
 
 test2: SecondApp
-	bin/SecondApp
+	bin/SecondApp $(ARGS)
 
 clean:
 	rm -rf bin/
