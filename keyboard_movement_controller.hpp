@@ -26,7 +26,7 @@ class KeyboardMovementController {
 
    KeyMappings keys{};
    float moveSpeed{3.f};
-   float lookSpeed{10.f};
+   float lookSpeed{3.f};
    bool normalMouse{true};
    bool changedMouse{false};
 	double lastX;

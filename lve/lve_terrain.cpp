@@ -29,8 +29,7 @@ LveTerrain::~LveTerrain() {
 
 std::unique_ptr<LveTerrain> LveTerrain::createModelFromMesh(
     LveDevice &device,
-    const std::vector<std::vector<float>> alttitudeMap)
-{
+    const std::vector<std::vector<float>> alttitudeMap) {
    Builder builder{};
    builder.generateMesh(alttitudeMap);
 
@@ -147,12 +146,14 @@ void LveTerrain::Builder::generateMesh(
    uint32_t total_verts = yn + (xn - 1) * (2 * yn - 2);
 
    for (uint32_t i = 0; i < total_verts; ++i) {
-      uint32_t r = i / 2;
-      uint32_t s = (r / xn) % 2;
-      uint32_t m = 1 - 2 * s;
+      uint32_t n = 4 * xn - 2;
+      uint32_t r = i % n;
+      uint32_t c = r / 2;
+      uint32_t d = (c / xn) % 2;
+      uint32_t s = 1 - 2 * d;
 
-      uint32_t x = s * (xn - 1) + m * (((i + s) / 2) % xn);
-      uint32_t y = m * (i % 2) + (r / xn) * 2;
+      uint32_t x = s * (i % 2) + (c / xn) * 2 + (i / n) * 2;
+      uint32_t y = d * (xn - 1) + s * (((r + d) / 2) % xn);
 
       uint32_t index = x + y * xn;
 

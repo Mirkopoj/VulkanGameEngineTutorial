@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "../lve/lve_device.hpp"
-#include "../lve/lve_frame_info.hpp"
+#include "../apps/first_app_frame_info.hpp"
 #include "../lve/lve_pipeline.hpp"
 #include "../apps/first_app_frame_info.hpp"
 
