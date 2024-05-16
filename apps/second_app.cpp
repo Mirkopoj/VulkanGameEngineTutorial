@@ -137,9 +137,9 @@ void SecondApp::run() {
 
 void SecondApp::loadGameObjects() {
    std::vector<std::vector<float>> altitudeMap = {};
-   for (int x = 0; x < 5; ++x) {
+   for (int x = 0; x < 8; ++x) {
       std::vector<float> aux = {};
-      for (int y = 0; y < 5; ++y) {
+      for (int y = 0; y < 8; ++y) {
          aux.push_back(static_cast<float>(x+y));
       }
       altitudeMap.push_back(aux);
