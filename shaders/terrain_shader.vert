@@ -27,7 +27,8 @@ push;
 void main() {
 	float x = mod(gl_VertexIndex, ubo.cols);
 	float y = floor(gl_VertexIndex/ubo.cols);
-   vec4 positionWorld = push.modelMatrix * vec4(x,altittude, y ,1.0);
+	vec3 position = vec3(x, altittude, y);
+   vec4 positionWorld = push.modelMatrix * vec4(position ,1.0);
 
    gl_Position = ubo.projection * ubo.view * positionWorld;
 

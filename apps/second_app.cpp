@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -140,9 +141,15 @@ void SecondApp::loadGameObjects() {
    for (int x = 0; x < 5; ++x) {
       std::vector<float> aux = {};
       for (int y = 0; y < 5; ++y) {
-         aux.push_back(static_cast<float>(x+y));
+         aux.push_back(static_cast<float>(rand() % 4) / 3.f);
       }
       altitudeMap.push_back(aux);
+   }
+   for (int x = 0; x < 5; ++x) {
+      for (int y = 0; y < 5; ++y) {
+         std::cout << altitudeMap[x][y] <<"   ";
+      }
+      std::cout << "\n";
    }
    terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap);
 }
