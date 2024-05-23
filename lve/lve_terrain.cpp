@@ -181,6 +181,39 @@ void LveTerrain::Builder::generateMesh(
    uint32_t total_verts = yn + (xn - 1) * (2 * yn - 2);
    uint32_t n = 4 * xn - 2;
 
+   for (int x = xn-1; x >= 0; --x) {
+      for (int y = 0; y < yn; ++y) {
+         uint32_t xs = x == xn - 1 ? x : x + 1;
+         uint32_t xa = x == 0 ? x : x - 1;
+         uint32_t ys = y == yn - 1 ? y : y + 1;
+         uint32_t ya = y == 0 ? y : y - 1;
+
+         glm::vec3 x_y = {x, y, alttitudeMap[x][y]};
+         glm::vec3 xs_y = {xs, y, alttitudeMap[xs][y]};
+         glm::vec3 xa_y = {xa, y, alttitudeMap[xa][y]};
+         glm::vec3 x_ys = {x, ys, alttitudeMap[x][ys]};
+         glm::vec3 x_ya = {x, ya, alttitudeMap[x][ya]};
+
+         glm::vec3 x_a = x_y - x_ys;
+         glm::vec3 x_b = x_y - xs_y;
+         glm::vec3 x_c = x_y - x_ya;
+         glm::vec3 x_d = x_y - xa_y;
+
+         glm::vec3 n1 = glm::cross(x_a, x_b);
+         glm::vec3 n2 = glm::cross(x_b, x_c);
+         glm::vec3 n3 = glm::cross(x_c, x_d);
+         glm::vec3 n4 = glm::cross(x_d, x_a);
+
+         glm::vec3 normal = (n1 + n2 + n3 + n4) / 4.f;
+
+         Vertex vertex = {.alttitude = -alttitudeMap[x][y],
+                          .color = color(x, y, xn, yn),
+                          .normal = normal};
+
+         vertices.push_back(vertex);
+      }
+   }
+
    for (uint32_t i = 0; i < total_verts; ++i) {
       uint32_t r = i % n;
       uint32_t c = r / 2;
@@ -191,35 +224,6 @@ void LveTerrain::Builder::generateMesh(
       uint32_t x = d * (xn - 1) + s * (((r + d) / 2) % xn);
 
       uint32_t index = x + y * xn;
-
-      uint32_t xs = x == xn - 1 ? x : x + 1;
-      uint32_t xa = x == 0 ? x : x - 1;
-      uint32_t ys = y == yn - 1 ? y : y + 1;
-      uint32_t ya = y == 0 ? y : y - 1;
-
-      glm::vec3 x_y = {x, y, alttitudeMap[x][y]};
-      glm::vec3 xs_y = {xs, y, alttitudeMap[xs][y]};
-      glm::vec3 xa_y = {xa, y, alttitudeMap[xa][y]};
-      glm::vec3 x_ys = {x, ys, alttitudeMap[x][ys]};
-      glm::vec3 x_ya = {x, ya, alttitudeMap[x][ya]};
-
-      glm::vec3 x_a = x_y - x_ys;
-      glm::vec3 x_b = x_y - xs_y;
-      glm::vec3 x_c = x_y - x_ya;
-      glm::vec3 x_d = x_y - xa_y;
-
-      glm::vec3 n1 = glm::cross(x_a, x_b);
-      glm::vec3 n2 = glm::cross(x_b, x_c);
-      glm::vec3 n3 = glm::cross(x_c, x_d);
-      glm::vec3 n4 = glm::cross(x_d, x_a);
-
-      glm::vec3 normal = (n1 + n2 + n3 + n4) / 4.f;
-
-      Vertex vertex = {.alttitude = alttitudeMap[x][y],
-                       .color = color(x, y, xn, yn),
-                       .normal = normal};
-
-      vertices.push_back(vertex);
       indices.push_back(index);
    }
 }

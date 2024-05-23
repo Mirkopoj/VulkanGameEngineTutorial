@@ -25,8 +25,8 @@ class KeyboardMovementController {
                       LveGameObject& gameObject);
 
    KeyMappings keys{};
-   float moveSpeed{3.f};
-   float lookSpeed{2.f};
+   float moveSpeed{29.f};
+   float lookSpeed{8.f};
    bool normalMouse{true};
    bool changedMouse{false};
 	double lastX;

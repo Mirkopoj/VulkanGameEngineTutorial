@@ -5,14 +5,11 @@
 #include "../apps/second_app.hpp"
 
 int main(int argc, char* argv[]) {
-   lve::SecondApp app{
-		atoi(argv[1]),
-		atoi(argv[2])
-	};
+   lve::SecondApp app{argv[1]};
 
    try {
       app.run();
-   } catch (const std::exception &e) {
+   } catch (const std::exception& e) {
       std::cerr << e.what() << '\n';
       return EXIT_FAILURE;
    }

@@ -4,7 +4,6 @@
 #include <sys/types.h>
 #include <vulkan/vulkan_core.h>
 
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -13,9 +12,6 @@
 #include <vector>
 
 #include "lve_device.hpp"
-#include "lve_game_object.hpp"
-#include "lve_model.hpp"
-#include "lve_pipeline.hpp"
 #include "lve_swap_chain.hpp"
 #include "lve_window.hpp"
 

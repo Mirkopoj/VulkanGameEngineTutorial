@@ -1,13 +1,22 @@
 #include "second_app.hpp"
 
+#include <pthread.h>
 #include <vulkan/vulkan_core.h>
 
+// std
+#include <imgui.h>
+
+#include <chrono>
+#include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <fstream>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
 #include <vector>
 
+#include "../asc_process/Lexer.hpp"
 #include "../keyboard_movement_controller.hpp"
 #include "../lve/lve_buffer.hpp"
 #include "../lve/lve_camera.hpp"
@@ -25,21 +34,16 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-// std
-#include <imgui.h>
-
-#include <chrono>
-
 namespace lve {
 
-SecondApp::SecondApp(int xn, int yn) : xn(xn), yn(yn) {
+SecondApp::SecondApp(const char* map) {
    globalPool = LveDescriptorPool::Builder(lveDevice)
                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                  LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .build();
 
-   loadGameObjects();
+   loadGameObjects(map);
 }
 
 SecondApp::~SecondApp() {
@@ -80,8 +84,8 @@ void SecondApp::run() {
    LveCamera camera{};
 
    auto viewerObject = LveGameObject::createGameObject();
-   viewerObject.transform.translation.x = static_cast<float>(xn-1) / 2.f;
-   viewerObject.transform.translation.z = static_cast<float>(yn-1) / 2.f;
+   viewerObject.transform.translation.x = static_cast<float>(xn - 1) / 2.f;
+   viewerObject.transform.translation.z = static_cast<float>(yn - 1) / 2.f;
    KeyboardMovementController cameraController{};
 
    auto currentTime = std::chrono::high_resolution_clock::now();
@@ -103,7 +107,7 @@ void SecondApp::run() {
 
       float aspect = lveRenderer.getAspectRatio();
       camera.setPerspectiveProjection(glm::radians(50.f), aspect, 0.1f,
-                                      100.f);
+                                      xn*1.5);
 
       if (auto commandBuffer = lveRenderer.beginFrame()) {
          int frameIndex = lveRenderer.getFrameIndex();
@@ -136,12 +140,42 @@ void SecondApp::run() {
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-void SecondApp::loadGameObjects() {
+void SecondApp::loadGameObjects(const char* map) {
+   std::ifstream ifile(map);
+   int32_t NODATA_value;
+   int cellsize;
+   const int meta_data_lines = 6;
+   std::string line;
+   for (int i = 0; i < meta_data_lines; ++i) {
+      std::getline(ifile, line);
+      Lexer::Line pair = Lexer::parse(line);
+      if (!std::strcmp(pair.name.c_str(), "ncols")) {
+         yn = pair.value;
+         continue;
+      }
+      if (!std::strcmp(pair.name.c_str(), "nrows")) {
+         xn = pair.value;
+         continue;
+      }
+      if (!std::strcmp(pair.name.c_str(), "NODATA_value")) {
+         NODATA_value = pair.value;
+         continue;
+      }
+      if (!std::strcmp(pair.name.c_str(), "cellsize")) {
+         cellsize = pair.value;
+         continue;
+      }
+   }
    std::vector<std::vector<glm::float32>> altitudeMap = {};
-   for (int x = 0; x < xn; ++x) {
+   for (std::string line; std::getline(ifile, line);) {
+      std::vector<std::string> altitudeMapIn = Lexer::tokenize(line);
       std::vector<glm::float32> aux = {};
       for (int y = 0; y < yn; ++y) {
-         glm::float32 alt{static_cast<float>(rand() % 1000) / 599.f};
+         int val = std::stoi(altitudeMapIn[y]);
+         if (val == NODATA_value) {
+            val = 0;
+         }
+         glm::float32 alt{static_cast<float>(val) / cellsize};
          aux.push_back(alt);
       }
       altitudeMap.push_back(aux);

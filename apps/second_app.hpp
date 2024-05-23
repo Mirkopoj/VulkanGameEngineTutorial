@@ -16,7 +16,7 @@ class SecondApp {
    static constexpr int WIDTH = 800;
    static constexpr int HEIGHT = 600;
 
-   SecondApp(int, int);
+   SecondApp(const char *);
    ~SecondApp();
 
    SecondApp(const SecondApp &) = delete;
@@ -25,7 +25,7 @@ class SecondApp {
    void run();
 
   private:
-   void loadGameObjects();
+   void loadGameObjects(const char *);
 
    LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
    LveDevice lveDevice{lveWindow};
@@ -33,7 +33,8 @@ class SecondApp {
 
    std::unique_ptr<LveDescriptorPool> globalPool{};
    std::unique_ptr<LveTerrain> terrain;
-	int xn;
-	int yn;
+
+	uint32_t xn;
+	uint32_t yn;
 };
 }  // namespace lve

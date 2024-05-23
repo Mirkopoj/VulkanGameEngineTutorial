@@ -6,6 +6,7 @@
 
 #include "lve_buffer.hpp"
 #include "lve_device.hpp"
+#include "lve_utils.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -16,7 +17,7 @@ namespace lve {
 class LveTerrain {
   public:
    struct Vertex {
-		glm::float32 alttitude{};
+      glm::float32 alttitude{};
       glm::vec3 color{};
       glm::vec3 normal{};
 
@@ -62,3 +63,4 @@ class LveTerrain {
 };
 
 }  // namespace lve
+
