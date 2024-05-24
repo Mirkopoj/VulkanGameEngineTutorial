@@ -176,23 +176,23 @@ void LveTerrain::Builder::generateMesh(
    vertices.clear();
    indices.clear();
 
-   uint32_t xn = alttitudeMap.size();
-   uint32_t yn = alttitudeMap[0].size();
+   uint32_t yn = alttitudeMap.size();
+   uint32_t xn = alttitudeMap[0].size();
    uint32_t total_verts = yn + (xn - 1) * (2 * yn - 2);
    uint32_t n = 4 * xn - 2;
 
-   for (int x = xn-1; x >= 0; --x) {
-      for (int y = 0; y < yn; ++y) {
+   for (int y = 0; y < yn; ++y) {
+      for (int x = xn - 1; x >= 0; --x) {
          uint32_t xs = x == xn - 1 ? x : x + 1;
          uint32_t xa = x == 0 ? x : x - 1;
          uint32_t ys = y == yn - 1 ? y : y + 1;
          uint32_t ya = y == 0 ? y : y - 1;
 
-         glm::vec3 x_y = {x, y, alttitudeMap[x][y]};
-         glm::vec3 xs_y = {xs, y, alttitudeMap[xs][y]};
-         glm::vec3 xa_y = {xa, y, alttitudeMap[xa][y]};
-         glm::vec3 x_ys = {x, ys, alttitudeMap[x][ys]};
-         glm::vec3 x_ya = {x, ya, alttitudeMap[x][ya]};
+         glm::vec3 x_y = {x, y, alttitudeMap[y][x]};
+         glm::vec3 xs_y = {xs, y, alttitudeMap[y][xs]};
+         glm::vec3 xa_y = {xa, y, alttitudeMap[y][xa]};
+         glm::vec3 x_ys = {x, ys, alttitudeMap[ys][x]};
+         glm::vec3 x_ya = {x, ya, alttitudeMap[ya][x]};
 
          glm::vec3 x_a = x_y - x_ys;
          glm::vec3 x_b = x_y - xs_y;
@@ -206,7 +206,7 @@ void LveTerrain::Builder::generateMesh(
 
          glm::vec3 normal = (n1 + n2 + n3 + n4) / 4.f;
 
-         Vertex vertex = {.alttitude = -alttitudeMap[x][y],
+         Vertex vertex = {.alttitude = -alttitudeMap[y][x],
                           .color = color(x, y, xn, yn),
                           .normal = normal};
 

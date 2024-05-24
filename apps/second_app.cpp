@@ -107,7 +107,7 @@ void SecondApp::run() {
 
       float aspect = lveRenderer.getAspectRatio();
       camera.setPerspectiveProjection(glm::radians(50.f), aspect, 0.1f,
-                                      xn*1.5);
+                                      fmax(xn, yn) * 1.8);
 
       if (auto commandBuffer = lveRenderer.beginFrame()) {
          int frameIndex = lveRenderer.getFrameIndex();
@@ -150,11 +150,11 @@ void SecondApp::loadGameObjects(const char* map) {
       std::getline(ifile, line);
       Lexer::Line pair = Lexer::parse(line);
       if (!std::strcmp(pair.name.c_str(), "ncols")) {
-         yn = pair.value;
+         xn = pair.value;
          continue;
       }
       if (!std::strcmp(pair.name.c_str(), "nrows")) {
-         xn = pair.value;
+         yn = pair.value;
          continue;
       }
       if (!std::strcmp(pair.name.c_str(), "NODATA_value")) {
@@ -170,8 +170,8 @@ void SecondApp::loadGameObjects(const char* map) {
    for (std::string line; std::getline(ifile, line);) {
       std::vector<std::string> altitudeMapIn = Lexer::tokenize(line);
       std::vector<glm::float32> aux = {};
-      for (int y = 0; y < yn; ++y) {
-         int val = std::stoi(altitudeMapIn[y]);
+      for (int x = 0; x < xn; ++x) {
+         int val = std::stoi(altitudeMapIn[x]);
          if (val == NODATA_value) {
             val = 0;
          }
