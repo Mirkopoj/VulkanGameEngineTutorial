@@ -1,4 +1,4 @@
-#include "imgui_system.hpp"
+#include "gui_system.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -10,16 +10,13 @@
 #include "../imgui/imgui_impl_vulkan.h"
 #include "../lve/lve_renderer.hpp"
 
-const char *VkResultToCString(VkResult result);
+const char *vk_result_to_c_string(VkResult result);
 
-static void CheckVkResult(VkResult err);
+static void check_vk_result(VkResult err);
 
-ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
-                 lve::LveRenderer &lveRenderer, VkDescriptorPool imguiPool)
-    : state({
-          .buf = "",
-          .f = 0.0,
-      }) {
+ImGuiGui::ImGuiGui(GLFWwindow *window, lve::LveDevice &lveDevice,
+                   lve::LveRenderer &lveRenderer,
+                   VkDescriptorPool imguiPool) {
    ImGui_ImplVulkan_InitInfo info = {};
    info.Instance = lveDevice.get_instance();
    info.PhysicalDevice = lveDevice.physical_device();
@@ -33,7 +30,7 @@ ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
    info.ImageCount = lveRenderer.getSwapChainImageCount();
    info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
    info.Allocator = nullptr;
-   info.CheckVkResultFn = CheckVkResult;
+   info.CheckVkResultFn = check_vk_result;
 
    IMGUI_CHECKVERSION();
    ImGui::CreateContext();
@@ -48,69 +45,44 @@ ImGuiUi::ImGuiUi(GLFWwindow *window, lve::LveDevice &lveDevice,
    ImGui::StyleColorsDark();
 }
 
-void ImGuiUi::new_frame() {
+void ImGuiGui::new_frame() {
    ImGui_ImplVulkan_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
 }
 
-void ImGuiUi::update(MyTextureData *i_img, MyTextureData *o_img) {
-   ImGui::ShowDemoWindow();
-
-   ImGui::Begin("Hola");
-   ImGui::Text("Hello, world %d", 123);
-   if (ImGui::Button("Save")) printf("Boton\n");
-   ImGui::InputText("string", &state.buf);
-   ImGui::SliderFloat("float", &state.f, 0.0f, 1.0f);
-   ImGui::Text("%f, %s", state.f, state.buf.c_str());
+void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
+                      bool &caminata) {
+   ImGui::Begin("Sensibilidad");
+   ImGui::SliderFloat("Velocidad minima", &cameraControler.moveSpeedMin,
+                      0.1f, cameraControler.moveSpeedMax);
+   ImGui::SliderFloat("Velocidad maxima", &cameraControler.moveSpeedMax,
+                      cameraControler.moveSpeedMin, 500.f);
+   ImGui::SliderFloat("Sensibilidad del mouse", &cameraControler.lookSpeed,
+                      0.1f, 20.f);
    ImGui::End();
 
-   ImGui::Begin("Antes");
-   ImGui::Image((ImTextureID)i_img->DS,
-                ImVec2(i_img->Width, i_img->Height));
-   ImGui::End();
-
-   ImGui::Begin("Despues");
-   ImGui::Image((ImTextureID)o_img->DS,
-                ImVec2(o_img->Width, o_img->Height));
-   ImGui::End();
-
-   ImGui::Begin("Shaders");
-   ImGui::Text("Cantidad");
-   ImGui::RadioButton("0", &state.shader_count, 0);
+	int caminata_i = caminata;
+   ImGui::Begin("Modo de movimiento");
+   ImGui::RadioButton("Caminata", &caminata_i, 1);
    ImGui::SameLine();
-   ImGui::RadioButton("1", &state.shader_count, 1);
-   ImGui::SameLine();
-   ImGui::RadioButton("2", &state.shader_count, 2);
-   if (state.shader_count > 0) {
-      ImGui::Text("Primero");
-      ImGui::RadioButton("Bordes", &state.first_shader, 0);
-      ImGui::SameLine();
-      ImGui::RadioButton("Borroso", &state.first_shader, 1);
-   }
-   if (state.shader_count > 1) {
-      ImGui::Text("Segundo");
-		ImGui::PushID(0);
-      ImGui::RadioButton("Bordes", &state.second_shader, 0);
-      ImGui::SameLine();
-      ImGui::RadioButton("Borroso", &state.second_shader, 1);
-		ImGui::PopID();
-   }
+   ImGui::RadioButton("Vuelo", &caminata_i, 0);
    ImGui::End();
+	caminata = caminata_i;
 }
 
-void ImGuiUi::render(VkCommandBuffer command_buffer) {
+void ImGuiGui::render(VkCommandBuffer command_buffer) {
    ImGui::Render();
    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
 }
 
-ImGuiUi::~ImGuiUi() {
+ImGuiGui::~ImGuiGui() {
    ImGui_ImplVulkan_Shutdown();
    ImGui_ImplGlfw_Shutdown();
    ImGui::DestroyContext();
 }
 
-const char *VkResultToCString(VkResult result) {
+const char *vk_result_to_c_string(VkResult result) {
    switch (result) {
       case VK_SUCCESS:
          return "VK_SUCCESS";

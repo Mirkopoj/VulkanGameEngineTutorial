@@ -32,6 +32,7 @@ class SecondApp {
    LveRenderer lveRenderer{lveWindow, lveDevice};
 
    std::unique_ptr<LveDescriptorPool> globalPool{};
+   std::unique_ptr<LveDescriptorPool> imguiPool{};
    std::unique_ptr<LveTerrain> terrain;
 
 	uint32_t xn;

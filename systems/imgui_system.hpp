@@ -27,7 +27,7 @@ struct MyTextureData {
 
 const char *VkResultToCString(VkResult result);
 
-static void check_vk_result(VkResult err) {
+static void CheckVkResult(VkResult err) {
    if (err == 0) return;
    fprintf(stderr, "[vulkan] Error: VkResult = %s\n",
            VkResultToCString(err));

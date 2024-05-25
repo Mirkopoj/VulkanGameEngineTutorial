@@ -28,6 +28,7 @@
 #include "../lve/lve_terrain.hpp"
 #include "../movement_controllers/terrain_movement_controller.hpp"
 #include "../systems/terrain_render_system.hpp"
+#include "../systems/gui_system.hpp"
 #include "second_app_frame_info.hpp"
 
 // libs
@@ -44,6 +45,13 @@ SecondApp::SecondApp(const char* map) {
                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                  LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .build();
+
+   imguiPool =
+       LveDescriptorPool::Builder(lveDevice)
+           .setMaxSets(4)
+           .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4)
+           .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
+           .build();
 
    loadGameObjects(map);
 }
@@ -91,7 +99,11 @@ void SecondApp::run() {
    TerrainMovementController cameraController{};
    float cameraHeight = 2.f;
 
+   ImGuiGui myimgui(lveWindow.getGLFWwindow(), lveDevice, lveRenderer,
+                   imguiPool->descriptor_pool());
+
    auto currentTime = std::chrono::high_resolution_clock::now();
+	bool caminata = false;
 
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
@@ -114,10 +126,12 @@ void SecondApp::run() {
                                      viewerObject, altitudeMap[y][x],
                                      fmin(xn, yn));
 
+		float floor = -cameraHeight - altitudeMap[y][x];
+		float roof = caminata ? floor: -fmin(xn,yn);
       viewerObject.transform.translation =
           glm::clamp(viewerObject.transform.translation,
-                     glm::vec3{0.f, -fmin(xn, yn), 0.f},
-                     glm::vec3{xn, -cameraHeight - altitudeMap[y][x], yn});
+                     glm::vec3{0.f, roof, 0.f},
+                     glm::vec3{xn, floor, yn});
 
       camera.setViewYXZ(viewerObject.transform.translation,
                         viewerObject.transform.rotation);
@@ -134,6 +148,7 @@ void SecondApp::run() {
                              camera,
                              globalDescriptorSets[frameIndex],
                              *terrain};
+         myimgui.new_frame();
 
          // update
          GlobalUbo ubo{};
@@ -143,11 +158,13 @@ void SecondApp::run() {
          ubo.cols = xn;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
+         myimgui.update(cameraController, caminata);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
 
          terrainRenderSystem.renderTerrain(frameInfo);
+         myimgui.render(commandBuffer);
 
          lveRenderer.endSwapChainRenderPass(commandBuffer);
          lveRenderer.endFrame();
