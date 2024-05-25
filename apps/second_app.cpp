@@ -7,10 +7,12 @@
 #include <imgui.h>
 
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
@@ -87,6 +89,7 @@ void SecondApp::run() {
    viewerObject.transform.translation.x = static_cast<float>(xn - 1) / 2.f;
    viewerObject.transform.translation.z = static_cast<float>(yn - 1) / 2.f;
    KeyboardMovementController cameraController{};
+   float cameraHeight = 2.f;
 
    auto currentTime = std::chrono::high_resolution_clock::now();
 
@@ -102,6 +105,16 @@ void SecondApp::run() {
 
       cameraController.moveInPlaneXZ(lveWindow.getGLFWwindow(), frameTime,
                                      viewerObject);
+      uint32_t x = glm::clamp(
+          xn - (uint32_t)roundf(viewerObject.transform.translation.x),
+          (uint32_t)0, xn - 1);
+      uint32_t y = glm::clamp(
+          (uint32_t)roundf(viewerObject.transform.translation.z),
+          (uint32_t)0, yn - 1);
+      viewerObject.transform.translation =
+          glm::clamp(viewerObject.transform.translation,
+                     glm::vec3{0.f, -fmin(xn, yn), 0.f},
+                     glm::vec3{xn, -cameraHeight - altitudeMap[y][x], yn});
       camera.setViewYXZ(viewerObject.transform.translation,
                         viewerObject.transform.rotation);
 
@@ -166,7 +179,8 @@ void SecondApp::loadGameObjects(const char* map) {
          continue;
       }
    }
-   std::vector<std::vector<glm::float32>> altitudeMap = {};
+   altitudeMap = {};
+   glm::float32 min = NAN;
    for (std::string line; std::getline(ifile, line);) {
       std::vector<std::string> altitudeMapIn = Lexer::tokenize(line);
       std::vector<glm::float32> aux = {};
@@ -176,9 +190,15 @@ void SecondApp::loadGameObjects(const char* map) {
             val = 0;
          }
          glm::float32 alt{static_cast<float>(val) / cellsize};
+         min = min != NAN && min < alt ? min : alt;
          aux.push_back(alt);
       }
       altitudeMap.push_back(aux);
+   }
+   for (std::vector<glm::float32>& row : altitudeMap) {
+      for (glm::float32& cell : row) {
+         cell -= min;
+      }
    }
 
    terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap);

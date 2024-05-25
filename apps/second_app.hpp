@@ -36,5 +36,7 @@ class SecondApp {
 
 	uint32_t xn;
 	uint32_t yn;
+
+   std::vector<std::vector<glm::float32>> altitudeMap;
 };
 }  // namespace lve
