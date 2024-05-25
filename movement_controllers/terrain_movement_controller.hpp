@@ -2,6 +2,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <vector>
+
 #include "../lve/lve_game_object.hpp"
 
 namespace lve {
@@ -22,7 +24,9 @@ class TerrainMovementController {
    };
 
    void moveInPlaneXZ(GLFWwindow* window, float dt,
-                      LveGameObject& gameObject, float floor, float roof);
+                      LveGameObject& gameObject,
+                      std::vector<std::vector<glm::float32>>& altitudeMap,
+                      float cameraHeight, bool caminata);
 
    KeyMappings keys{};
    float moveSpeedMin{25.f};

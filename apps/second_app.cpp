@@ -27,8 +27,8 @@
 #include "../lve/lve_swap_chain.hpp"
 #include "../lve/lve_terrain.hpp"
 #include "../movement_controllers/terrain_movement_controller.hpp"
-#include "../systems/terrain_render_system.hpp"
 #include "../systems/gui_system.hpp"
+#include "../systems/terrain_render_system.hpp"
 #include "second_app_frame_info.hpp"
 
 // libs
@@ -93,17 +93,26 @@ void SecondApp::run() {
 
    LveCamera camera{};
 
+   float cameraHeight = 2.f;
    auto viewerObject = LveGameObject::createGameObject();
    viewerObject.transform.translation.x = static_cast<float>(xn - 1) / 2.f;
    viewerObject.transform.translation.z = static_cast<float>(yn - 1) / 2.f;
+   uint32_t x = glm::clamp(
+       xn - (uint32_t)roundf(viewerObject.transform.translation.x),
+       (uint32_t)0, xn - 1);
+   uint32_t y =
+       glm::clamp((uint32_t)roundf(viewerObject.transform.translation.z),
+                  (uint32_t)0, yn - 1);
+   viewerObject.transform.translation.y =
+       -cameraHeight - altitudeMap[y][x];
+
    TerrainMovementController cameraController{};
-   float cameraHeight = 2.f;
 
    ImGuiGui myimgui(lveWindow.getGLFWwindow(), lveDevice, lveRenderer,
-                   imguiPool->descriptor_pool());
+                    imguiPool->descriptor_pool());
 
    auto currentTime = std::chrono::high_resolution_clock::now();
-	bool caminata = false;
+   bool caminata = false;
 
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
@@ -115,23 +124,9 @@ void SecondApp::run() {
               .count();
       currentTime = newTime;
 
-      uint32_t x = glm::clamp(
-          xn - (uint32_t)roundf(viewerObject.transform.translation.x),
-          (uint32_t)0, xn - 1);
-      uint32_t y = glm::clamp(
-          (uint32_t)roundf(viewerObject.transform.translation.z),
-          (uint32_t)0, yn - 1);
-
       cameraController.moveInPlaneXZ(lveWindow.getGLFWwindow(), frameTime,
-                                     viewerObject, altitudeMap[y][x],
-                                     fmin(xn, yn));
-
-		float floor = -cameraHeight - altitudeMap[y][x];
-		float roof = caminata ? floor: -fmin(xn,yn);
-      viewerObject.transform.translation =
-          glm::clamp(viewerObject.transform.translation,
-                     glm::vec3{0.f, roof, 0.f},
-                     glm::vec3{xn, floor, yn});
+                                     viewerObject, altitudeMap,
+                                     cameraHeight, caminata);
 
       camera.setViewYXZ(viewerObject.transform.translation,
                         viewerObject.transform.rotation);

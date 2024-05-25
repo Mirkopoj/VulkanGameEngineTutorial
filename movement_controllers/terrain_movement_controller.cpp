@@ -2,6 +2,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cmath>
+#include <cstdint>
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/constants.hpp>
@@ -9,9 +11,10 @@
 
 namespace lve {
 
-void TerrainMovementController::moveInPlaneXZ(GLFWwindow* window, float dt,
-                                              LveGameObject& gameObject,
-                                              float floor, float roof) {
+void TerrainMovementController::moveInPlaneXZ(
+    GLFWwindow* window, float dt, LveGameObject& gameObject,
+    std::vector<std::vector<glm::float32>>& altitudeMap,
+    float cameraHeight, bool caminata) {
    int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
    if (state == GLFW_PRESS && !changedMouse) {
       int cursor_mode =
@@ -78,6 +81,19 @@ void TerrainMovementController::moveInPlaneXZ(GLFWwindow* window, float dt,
          moveDir -= upDir;
       }
 
+      uint32_t xn = altitudeMap[0].size();
+      uint32_t yn = altitudeMap.size();
+
+      uint32_t x = glm::clamp(
+          xn - (uint32_t)roundf(gameObject.transform.translation.x),
+          (uint32_t)0, xn - 1);
+      uint32_t y =
+          glm::clamp((uint32_t)roundf(gameObject.transform.translation.z),
+                     (uint32_t)0, yn - 1);
+
+      float roof = fmin(xn, yn);
+		float floor = altitudeMap[y][x];
+
       float moveSpeed =
           moveSpeedMin +
           moveSpeedMax * ((-gameObject.transform.translation.y - floor) /
@@ -88,6 +104,34 @@ void TerrainMovementController::moveInPlaneXZ(GLFWwindow* window, float dt,
          gameObject.transform.translation +=
              moveSpeed * dt * glm::normalize(moveDir);
       }
+
+      uint32_t x0 = glm::clamp(
+          xn - (uint32_t)floorf(gameObject.transform.translation.x),
+          (uint32_t)0, xn - 1);
+      uint32_t y0 =
+          glm::clamp((uint32_t)floorf(gameObject.transform.translation.z),
+                     (uint32_t)0, yn - 1);
+
+      uint32_t x1 = glm::clamp(
+          xn - (uint32_t)ceilf(gameObject.transform.translation.x),
+          (uint32_t)0, xn - 1);
+      uint32_t y1 =
+          glm::clamp((uint32_t)ceilf(gameObject.transform.translation.z),
+                     (uint32_t)0, yn - 1);
+
+      float x_reg = glm::fract(gameObject.transform.translation.x);
+      float y_reg = glm::fract(gameObject.transform.translation.z);
+
+      float z00 = altitudeMap[y0][x0];
+      float z01 = altitudeMap[y0][x1];
+      float z10 = altitudeMap[y1][x0];
+
+      float cam_floor = -cameraHeight -
+                        (z00 + x_reg * (z01 - z00) + y_reg * (z10 - z00));
+      float cam_roof = caminata ? cam_floor - 0.1 : -roof;
+      gameObject.transform.translation = glm::clamp(
+          gameObject.transform.translation, glm::vec3{0.f, cam_roof, 0.f},
+          glm::vec3{xn, cam_floor, yn});
    }
 }
 
