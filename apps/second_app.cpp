@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "../asc_process/Lexer.hpp"
-#include "../keyboard_movement_controller.hpp"
 #include "../lve/lve_buffer.hpp"
 #include "../lve/lve_camera.hpp"
 #include "../lve/lve_descriptors.hpp"
@@ -27,6 +26,7 @@
 #include "../lve/lve_game_object.hpp"
 #include "../lve/lve_swap_chain.hpp"
 #include "../lve/lve_terrain.hpp"
+#include "../movement_controllers/terrain_movement_controller.hpp"
 #include "../systems/terrain_render_system.hpp"
 #include "second_app_frame_info.hpp"
 
@@ -88,7 +88,7 @@ void SecondApp::run() {
    auto viewerObject = LveGameObject::createGameObject();
    viewerObject.transform.translation.x = static_cast<float>(xn - 1) / 2.f;
    viewerObject.transform.translation.z = static_cast<float>(yn - 1) / 2.f;
-   KeyboardMovementController cameraController{};
+   TerrainMovementController cameraController{};
    float cameraHeight = 2.f;
 
    auto currentTime = std::chrono::high_resolution_clock::now();
@@ -103,18 +103,22 @@ void SecondApp::run() {
               .count();
       currentTime = newTime;
 
-      cameraController.moveInPlaneXZ(lveWindow.getGLFWwindow(), frameTime,
-                                     viewerObject);
       uint32_t x = glm::clamp(
           xn - (uint32_t)roundf(viewerObject.transform.translation.x),
           (uint32_t)0, xn - 1);
       uint32_t y = glm::clamp(
           (uint32_t)roundf(viewerObject.transform.translation.z),
           (uint32_t)0, yn - 1);
+
+      cameraController.moveInPlaneXZ(lveWindow.getGLFWwindow(), frameTime,
+                                     viewerObject, altitudeMap[y][x],
+                                     fmin(xn, yn));
+
       viewerObject.transform.translation =
           glm::clamp(viewerObject.transform.translation,
                      glm::vec3{0.f, -fmin(xn, yn), 0.f},
                      glm::vec3{xn, -cameraHeight - altitudeMap[y][x], yn});
+
       camera.setViewYXZ(viewerObject.transform.translation,
                         viewerObject.transform.rotation);
 
