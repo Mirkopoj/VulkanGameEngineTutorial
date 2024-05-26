@@ -61,7 +61,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
       err =
           vkCreateImage(device.device(), &info, nullptr, &tex_data->Image);
-      check_vk_result(err);
+      CheckVkResult(err);
       VkMemoryRequirements req;
       vkGetImageMemoryRequirements(device.device(), tex_data->Image, &req);
       VkMemoryAllocateInfo alloc_info = {};
@@ -71,10 +71,10 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
           req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device);
       err = vkAllocateMemory(device.device(), &alloc_info, nullptr,
                              &tex_data->ImageMemory);
-      check_vk_result(err);
+      CheckVkResult(err);
       err = vkBindImageMemory(device.device(), tex_data->Image,
                               tex_data->ImageMemory, 0);
-      check_vk_result(err);
+      CheckVkResult(err);
    }
 
    // Create the Image View
@@ -89,7 +89,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       info.subresourceRange.layerCount = 1;
       err = vkCreateImageView(device.device(), &info, nullptr,
                               &tex_data->ImageView);
-      check_vk_result(err);
+      CheckVkResult(err);
    }
 
    // Create Sampler
@@ -109,7 +109,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       sampler_info.maxAnisotropy = 1.0f;
       err = vkCreateSampler(device.device(), &sampler_info, nullptr,
                             &tex_data->Sampler);
-      check_vk_result(err);
+      CheckVkResult(err);
    }
 
    // Create Descriptor Set using ImGUI's implementation
@@ -126,7 +126,7 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
       err = vkCreateBuffer(device.device(), &buffer_info, nullptr,
                            &tex_data->UploadBuffer);
-      check_vk_result(err);
+      CheckVkResult(err);
       VkMemoryRequirements req;
       vkGetBufferMemoryRequirements(device.device(),
                                     tex_data->UploadBuffer, &req);
@@ -137,10 +137,10 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
           req.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, device);
       err = vkAllocateMemory(device.device(), &alloc_info, nullptr,
                              &tex_data->UploadBufferMemory);
-      check_vk_result(err);
+      CheckVkResult(err);
       err = vkBindBufferMemory(device.device(), tex_data->UploadBuffer,
                                tex_data->UploadBufferMemory, 0);
-      check_vk_result(err);
+      CheckVkResult(err);
    }
 
    // Upload to Buffer:
@@ -148,14 +148,14 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       void* map = NULL;
       err = vkMapMemory(device.device(), tex_data->UploadBufferMemory, 0,
                         image_size, 0, &map);
-      check_vk_result(err);
+      CheckVkResult(err);
       memcpy(map, image_data, image_size);
       VkMappedMemoryRange range[1] = {};
       range[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
       range[0].memory = tex_data->UploadBufferMemory;
       range[0].size = image_size;
       err = vkFlushMappedMemoryRanges(device.device(), 1, range);
-      check_vk_result(err);
+      CheckVkResult(err);
       vkUnmapMemory(device.device(), tex_data->UploadBufferMemory);
    }
 
@@ -177,13 +177,13 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
 
       err = vkAllocateCommandBuffers(device.device(), &alloc_info,
                                      &command_buffer);
-      check_vk_result(err);
+      CheckVkResult(err);
 
       VkCommandBufferBeginInfo begin_info = {};
       begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
       begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
       err = vkBeginCommandBuffer(command_buffer, &begin_info);
-      check_vk_result(err);
+      CheckVkResult(err);
    }
 
    // Copy to Image
@@ -239,12 +239,12 @@ bool LoadTextureFromFile(const char* filename, MyTextureData* tex_data,
       end_info.commandBufferCount = 1;
       end_info.pCommandBuffers = &command_buffer;
       err = vkEndCommandBuffer(command_buffer);
-      check_vk_result(err);
+      CheckVkResult(err);
       err = vkQueueSubmit(device.graphicsQueue(), 1, &end_info,
                           VK_NULL_HANDLE);
-      check_vk_result(err);
+      CheckVkResult(err);
       err = vkDeviceWaitIdle(device.device());
-      check_vk_result(err);
+      CheckVkResult(err);
    }
 
    return true;
