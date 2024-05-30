@@ -23,7 +23,8 @@ PaletDB::PaletDB(const char *path) {
       }
       if (sscanf(line.c_str(), "I%d=\"%[^\"]\",%f,%f,%f", &id, name, &r,
                  &g, &b)) {
-         layer[id] = Color{.name = name, .color = glm::vec3{r, g, b}};
+         layer[id] = Color{.name = name,
+                           .color = glm::vec3{r / 255, g / 255, b / 255}};
       }
    }
 }
