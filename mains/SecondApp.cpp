@@ -5,7 +5,10 @@
 #include "../apps/second_app.hpp"
 
 int main(int argc, char* argv[]) {
-   lve::SecondApp app{argv[1]};
+   lve::SecondApp app{};
+	if (argc > 1) {
+		app.loadGameObjects(argv[1]);
+	}
 
    try {
       app.run();

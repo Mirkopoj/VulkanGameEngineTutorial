@@ -31,7 +31,7 @@ struct FrameInfo {
    VkCommandBuffer commandBuffer;
    LveCamera &camera;
    VkDescriptorSet globalDescriptorSet;
-   LveTerrain &terrain;
+	std::unique_ptr<LveTerrain> &terrain;
 };
 
 }  // namespace lve

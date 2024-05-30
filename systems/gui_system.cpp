@@ -52,7 +52,7 @@ void ImGuiGui::new_frame() {
 }
 
 void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
-                      bool &caminata) {
+                      bool &caminata, std::string &path) {
    ImGui::Begin("Sensibilidad");
    ImGui::SliderFloat("Velocidad minima", &cameraControler.moveSpeedMin,
                       0.1f, cameraControler.moveSpeedMax);
@@ -62,13 +62,17 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
                       0.1f, 20.f);
    ImGui::End();
 
-	int caminata_i = caminata;
+   int caminata_i = caminata;
    ImGui::Begin("Modo de movimiento");
    ImGui::RadioButton("Caminata", &caminata_i, 1);
    ImGui::SameLine();
    ImGui::RadioButton("Vuelo", &caminata_i, 0);
    ImGui::End();
-	caminata = caminata_i;
+   caminata = caminata_i;
+
+   ImGui::Begin("Proyect selector");
+   ImGui::InputText("current", &path);
+   ImGui::End();
 }
 
 void ImGuiGui::render(VkCommandBuffer command_buffer) {

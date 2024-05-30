@@ -39,20 +39,34 @@
 
 namespace lve {
 
-SecondApp::SecondApp(const char* path) {
-   globalPool = LveDescriptorPool::Builder(lveDevice)
-                    .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
-                    .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                 LveSwapChain::MAX_FRAMES_IN_FLIGHT)
-                    .build();
+SecondApp::SecondApp()
+    : globalPool(LveDescriptorPool::Builder(lveDevice)
+                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
+                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                  LveSwapChain::MAX_FRAMES_IN_FLIGHT)
+                     .build()),
+      imguiPool(
+          LveDescriptorPool::Builder(lveDevice)
+              .setMaxSets(4)
+              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4)
+              .setPoolFlags(
+                  VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
+              .build()) {
+}
 
-   imguiPool =
-       LveDescriptorPool::Builder(lveDevice)
-           .setMaxSets(4)
-           .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4)
-           .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
-           .build();
-
+SecondApp::SecondApp(const char* path)
+    : globalPool(LveDescriptorPool::Builder(lveDevice)
+                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
+                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                  LveSwapChain::MAX_FRAMES_IN_FLIGHT)
+                     .build()),
+      imguiPool(
+          LveDescriptorPool::Builder(lveDevice)
+              .setMaxSets(4)
+              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4)
+              .setPoolFlags(
+                  VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
+              .build()) {
    loadGameObjects(path);
 }
 
@@ -103,8 +117,10 @@ void SecondApp::run() {
    uint32_t y =
        glm::clamp((uint32_t)roundf(viewerObject.transform.translation.z),
                   (uint32_t)0, yn - 1);
-   viewerObject.transform.translation.y =
-       -cameraHeight - altitudeMap[y][x];
+   if (xn && yn) {
+      viewerObject.transform.translation.y =
+          -cameraHeight - altitudeMap[y][x];
+   }
 
    TerrainMovementController cameraController{};
 
@@ -114,6 +130,7 @@ void SecondApp::run() {
    auto currentTime = std::chrono::high_resolution_clock::now();
    bool caminata = false;
 
+   std::string new_path = path;
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
 
@@ -142,7 +159,7 @@ void SecondApp::run() {
                              commandBuffer,
                              camera,
                              globalDescriptorSets[frameIndex],
-                             *terrain};
+                             terrain};
          myimgui.new_frame();
 
          // update
@@ -153,31 +170,45 @@ void SecondApp::run() {
          ubo.cols = xn;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
-         myimgui.update(cameraController, caminata);
+         myimgui.update(cameraController, caminata, new_path);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
 
-         terrainRenderSystem.renderTerrain(frameInfo);
+         if (terrain) {
+            terrainRenderSystem.renderTerrain(frameInfo);
+         }
          myimgui.render(commandBuffer);
 
          lveRenderer.endSwapChainRenderPass(commandBuffer);
          lveRenderer.endFrame();
+      }
+
+      if (new_path != path) {
+         try {
+            loadGameObjects(new_path.c_str());
+				path = new_path;
+         } catch (...) { }
       }
    }
 
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-void SecondApp::loadGameObjects(const char* path) {
-   Lexer::Config config(path);
-   yn = std::stoi(config.value("ROWS"));
-   xn = std::stoi(config.value("COLS"));
+void SecondApp::loadGameObjects(const char* new_path) {
+   uint32_t temp_yn;
+   uint32_t temp_xn;
+   std::vector<std::vector<glm::float32>> temp_altitudeMap;
+   std::unique_ptr<LveTerrain> temp_terrain;
+
+   Lexer::Config config(new_path);
+   temp_yn = std::stoi(config.value("ROWS"));
+   temp_xn = std::stoi(config.value("COLS"));
    Lexer::Ascf altitudeAsc = Lexer::loadf(
        (config.get_path() + config.value("ELEV_MAP")).c_str());
-   altitudeMap = altitudeAsc.body;
+   temp_altitudeMap = altitudeAsc.body;
    glm::float32 min = NAN;
-   for (std::vector<glm::float32>& row : altitudeMap) {
+   for (std::vector<glm::float32>& row : temp_altitudeMap) {
       for (glm::float32& cell : row) {
          if (cell == altitudeAsc.NODATA_value) {
             cell = 0;
@@ -187,7 +218,7 @@ void SecondApp::loadGameObjects(const char* path) {
          min = min != NAN && min < cell ? min : cell;
       }
    }
-   for (std::vector<glm::float32>& row : altitudeMap) {
+   for (std::vector<glm::float32>& row : temp_altitudeMap) {
       for (glm::float32& cell : row) {
          cell -= min;
       }
@@ -206,9 +237,14 @@ void SecondApp::loadGameObjects(const char* path) {
       }
       colorMap.push_back(aux);
    }
+   temp_terrain = LveTerrain::createModelFromMesh(
+       lveDevice, temp_altitudeMap, colorMap);
 
-   terrain =
-       LveTerrain::createModelFromMesh(lveDevice, altitudeMap, colorMap);
+   xn = temp_xn;
+   yn = temp_yn;
+   altitudeMap = temp_altitudeMap;
+   terrain = std::move(temp_terrain);
+   path = new_path;
 }
 
 }  // namespace lve

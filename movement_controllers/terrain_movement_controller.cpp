@@ -81,8 +81,15 @@ void TerrainMovementController::moveInPlaneXZ(
          moveDir -= upDir;
       }
 
-      uint32_t xn = altitudeMap[0].size();
       uint32_t yn = altitudeMap.size();
+      if (!yn) {
+         return;
+      }
+
+      uint32_t xn = altitudeMap[0].size();
+      if (!xn) {
+         return;
+      }
 
       uint32_t x = glm::clamp(
           xn - (uint32_t)roundf(gameObject.transform.translation.x),
@@ -92,7 +99,7 @@ void TerrainMovementController::moveInPlaneXZ(
                      (uint32_t)0, yn - 1);
 
       float roof = fmin(xn, yn);
-		float floor = altitudeMap[y][x];
+      float floor = altitudeMap[y][x];
 
       float moveSpeed =
           moveSpeedMin +

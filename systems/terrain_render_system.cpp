@@ -134,8 +134,8 @@ void TerrainRenderSystem::renderTerrain(FrameInfo &frameInfo) {
        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
        sizeof(SimplePushConstantData), &push);
 
-   frameInfo.terrain.bind(frameInfo.commandBuffer);
-   frameInfo.terrain.draw(frameInfo.commandBuffer);
+   frameInfo.terrain->bind(frameInfo.commandBuffer);
+   frameInfo.terrain->draw(frameInfo.commandBuffer);
 }
 
 }  // namespace lve

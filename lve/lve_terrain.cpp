@@ -147,7 +147,9 @@ void LveTerrain::Builder::generateMesh(
    indices.clear();
 
    uint32_t yn = alttitudeMap.size();
+   if (!yn) return;
    uint32_t xn = alttitudeMap[0].size();
+   if (!xn) return;
    uint32_t total_verts = yn + (xn - 1) * (2 * yn - 2);
    uint32_t n = 4 * xn - 2;
 

@@ -26,7 +26,7 @@ class ImGuiGui {
    ~ImGuiGui();
 
    void new_frame();
-   void update(lve::TerrainMovementController &, bool &);
+   void update(lve::TerrainMovementController &, bool &, std::string &);
    void render(VkCommandBuffer command_buffer);
 
   private:
