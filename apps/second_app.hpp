@@ -16,7 +16,7 @@ class SecondApp {
    static constexpr int WIDTH = 800;
    static constexpr int HEIGHT = 600;
 
-   SecondApp(const char *, const char *);
+   SecondApp(const char *, const char *, const char *);
    ~SecondApp();
 
    SecondApp(const SecondApp &) = delete;
@@ -25,7 +25,7 @@ class SecondApp {
    void run();
 
   private:
-   void loadGameObjects(const char *, const char *);
+   void loadGameObjects(const char *, const char *, const char *);
 
    LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
    LveDevice lveDevice{lveWindow};
@@ -35,8 +35,8 @@ class SecondApp {
    std::unique_ptr<LveDescriptorPool> imguiPool{};
    std::unique_ptr<LveTerrain> terrain;
 
-	uint32_t xn;
-	uint32_t yn;
+   uint32_t xn;
+   uint32_t yn;
 
    std::vector<std::vector<glm::float32>> altitudeMap;
 };

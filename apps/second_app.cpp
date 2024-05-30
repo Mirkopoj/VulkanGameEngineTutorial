@@ -38,7 +38,8 @@
 
 namespace lve {
 
-SecondApp::SecondApp(const char* map, const char* vege) {
+SecondApp::SecondApp(const char* map, const char* vege,
+                     const char* palet) {
    globalPool = LveDescriptorPool::Builder(lveDevice)
                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -52,7 +53,7 @@ SecondApp::SecondApp(const char* map, const char* vege) {
            .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
            .build();
 
-   loadGameObjects(map, vege);
+   loadGameObjects(map, vege, palet);
 }
 
 SecondApp::~SecondApp() {
@@ -168,7 +169,8 @@ void SecondApp::run() {
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-void SecondApp::loadGameObjects(const char* map, const char* vege) {
+void SecondApp::loadGameObjects(const char* map, const char* vege,
+                                const char* palet) {
    Lexer::Ascf altitudeAsc = Lexer::loadf(map);
    altitudeMap = altitudeAsc.body;
    glm::float32 min = NAN;
@@ -192,15 +194,18 @@ void SecondApp::loadGameObjects(const char* map, const char* vege) {
    Lexer::Asci vegetationAsc = Lexer::loadi(vege);
    std::vector<std::vector<glm::int32>> vegetationMap = vegetationAsc.body;
    std::vector<std::vector<glm::vec3>> colorMap;
+   Lexer::PaletDB paletDb{palet};
    for (std::vector<glm::int32> row : vegetationMap) {
       std::vector<glm::vec3> aux;
       for (glm::int32 cell : row) {
-         aux.push_back(glm::vec3{cell, cell, cell});
+         Lexer::PaletDB::Color color = paletDb.color(cell);
+         aux.push_back(color.color);
       }
-		colorMap.push_back(aux);
+      colorMap.push_back(aux);
    }
 
-   terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap, colorMap);
+   terrain =
+       LveTerrain::createModelFromMesh(lveDevice, altitudeMap, colorMap);
 }
 
 }  // namespace lve

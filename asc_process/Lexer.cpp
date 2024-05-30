@@ -2,11 +2,38 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <glm/ext/scalar_int_sized.hpp>
 
-Lexer::Ascf Lexer::loadf(const char *path) {
+namespace Lexer {
+
+PaletDB::PaletDB(const char *path) {
+   std::ifstream ifile(path);
+   int32_t type;
+   uint32_t id;
+   char name[255];
+   float r;
+   float g;
+   float b;
+   for (std::string line; std::getline(ifile, line);) {
+      if (sscanf(line.c_str(), "R%d=%d", &id, &type)) {
+         types[type] = id;
+      }
+      if (sscanf(line.c_str(), "I%d=\"%[^\"]\",%f,%f,%f", &id, name, &r,
+                 &g, &b)) {
+         layer[id] = Color{.name = name, .color = glm::vec3{r, g, b}};
+      }
+   }
+}
+
+PaletDB::Color PaletDB::color(int32_t type) {
+   uint32_t id = types[type];
+   return layer[id];
+}
+
+Ascf loadf(const char *path) {
    std::ifstream ifile(path);
    int32_t NODATA_value;
    int cellsize;
@@ -16,7 +43,7 @@ Lexer::Ascf Lexer::loadf(const char *path) {
    std::string line;
    for (int i = 0; i < meta_data_lines; ++i) {
       std::getline(ifile, line);
-      Lexer::Line pair = Lexer::parse(line);
+      Line pair = parse(line);
       if (!std::strcmp(pair.name.c_str(), "ncols")) {
          xn = pair.value;
          continue;
@@ -36,7 +63,7 @@ Lexer::Ascf Lexer::loadf(const char *path) {
    }
    std::vector<std::vector<glm::float32>> ret = {};
    for (std::string line; std::getline(ifile, line);) {
-      std::vector<std::string> altitudeMapIn = Lexer::tokenize(line);
+      std::vector<std::string> altitudeMapIn = tokenize(line);
       std::vector<glm::float32> aux = {};
       for (int x = 0; x < xn; ++x) {
          int val = std::stof(altitudeMapIn[x]);
@@ -51,7 +78,7 @@ Lexer::Ascf Lexer::loadf(const char *path) {
    };
 }
 
-Lexer::Asci Lexer::loadi(const char *path) {
+Asci loadi(const char *path) {
    std::ifstream ifile(path);
    int32_t NODATA_value;
    int cellsize;
@@ -61,7 +88,7 @@ Lexer::Asci Lexer::loadi(const char *path) {
    std::string line;
    for (int i = 0; i < meta_data_lines; ++i) {
       std::getline(ifile, line);
-      Lexer::Line pair = Lexer::parse(line);
+      Line pair = parse(line);
       if (!std::strcmp(pair.name.c_str(), "ncols")) {
          xn = pair.value;
          continue;
@@ -81,7 +108,7 @@ Lexer::Asci Lexer::loadi(const char *path) {
    }
    std::vector<std::vector<glm::int32>> ret = {};
    for (std::string line; std::getline(ifile, line);) {
-      std::vector<std::string> altitudeMapIn = Lexer::tokenize(line);
+      std::vector<std::string> altitudeMapIn = tokenize(line);
       std::vector<glm::int32> aux = {};
       for (int x = 0; x < xn; ++x) {
          int val = std::stoi(altitudeMapIn[x]);
@@ -96,9 +123,9 @@ Lexer::Asci Lexer::loadi(const char *path) {
    };
 }
 
-Lexer::Line Lexer::parse(std::string line) {
+Line parse(std::string line) {
    Line ret;
-   std::vector<std::string> words = Lexer::tokenize(line);
+   std::vector<std::string> words = tokenize(line);
    if (words.size() < 2) {
       LexicalError e;
       throw e;
@@ -113,7 +140,7 @@ Lexer::Line Lexer::parse(std::string line) {
    return ret;
 }
 
-std::vector<std::string> Lexer::tokenize(std::string line) {
+std::vector<std::string> tokenize(std::string line) {
    std::vector<std::string> ret;
    char prev = ' ';
    for (char &character : line) {
@@ -129,6 +156,8 @@ std::vector<std::string> Lexer::tokenize(std::string line) {
    return ret;
 }
 
-const char *Lexer::LexicalError::what() const noexcept(true) {
+const char *LexicalError::what() const noexcept(true) {
    return msg;
 }
+
+}  // namespace Lexer
