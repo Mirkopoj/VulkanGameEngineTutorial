@@ -1,0 +1,4 @@
+#Indices correspondientes al 1er 
+#dia del archivo datos_meteorologicos.txt
+#FFMC	DMC	DC
+21.2	0.1	0.6

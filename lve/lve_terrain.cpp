@@ -32,9 +32,10 @@ LveTerrain::~LveTerrain() {
 
 std::unique_ptr<LveTerrain> LveTerrain::createModelFromMesh(
     LveDevice &device,
-    const std::vector<std::vector<glm::float32>> alttitudeMap) {
+    const std::vector<std::vector<glm::float32>> alttitudeMap,
+    const std::vector<std::vector<glm::vec3>> colorMap) {
    Builder builder{};
-   builder.generateMesh(alttitudeMap);
+   builder.generateMesh(alttitudeMap, colorMap);
 
    return std::make_unique<LveTerrain>(device, builder);
 }
@@ -139,40 +140,9 @@ LveTerrain::Vertex::getAttributeDescriptions() {
    return attributeDescriptions;
 }
 
-// Temporal
-glm::vec3 color(float x, float y, uint32_t xn, uint32_t yn) {
-   float index_n = x + y;
-   index_n /= xn + yn - 2;
-   glm::vec3 color;
-   float a = (1 - index_n) / 0.2;
-   int X = a;
-   float Y = 255.f * (a - (float)X);
-   switch (X) {
-      case 0:
-         color = {255.0, Y, 0.0};
-         break;
-      case 1:
-         color = {255.0 - Y, 255.0, 0.0};
-         break;
-      case 2:
-         color = {0.0, 255.0, Y};
-         break;
-      case 3:
-         color = {0.0, 255.0 - Y, 255.0};
-         break;
-      case 4:
-         color = {Y, 0.0, 255.0};
-         break;
-      case 5:
-         color = {255.0, 0.0, 255.0};
-         break;
-   }
-   color /= 255.0;
-   return color;
-}
-
 void LveTerrain::Builder::generateMesh(
-    const std::vector<std::vector<glm::float32>> alttitudeMap) {
+    const std::vector<std::vector<glm::float32>> alttitudeMap,
+    const std::vector<std::vector<glm::vec3>> colorMap) {
    vertices.clear();
    indices.clear();
 
@@ -207,7 +177,7 @@ void LveTerrain::Builder::generateMesh(
          glm::vec3 normal = (n1 + n2 + n3 + n4) / 4.f;
 
          Vertex vertex = {.alttitude = -alttitudeMap[y][x],
-                          .color = color(x, y, xn, yn),
+                          .color = colorMap[y][x],
                           .normal = normal};
 
          vertices.push_back(vertex);

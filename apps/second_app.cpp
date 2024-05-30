@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -39,7 +38,7 @@
 
 namespace lve {
 
-SecondApp::SecondApp(const char* map) {
+SecondApp::SecondApp(const char* map, const char* vege) {
    globalPool = LveDescriptorPool::Builder(lveDevice)
                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -53,7 +52,7 @@ SecondApp::SecondApp(const char* map) {
            .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
            .build();
 
-   loadGameObjects(map);
+   loadGameObjects(map, vege);
 }
 
 SecondApp::~SecondApp() {
@@ -169,55 +168,39 @@ void SecondApp::run() {
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-void SecondApp::loadGameObjects(const char* map) {
-   std::ifstream ifile(map);
-   int32_t NODATA_value;
-   int cellsize;
-   const int meta_data_lines = 6;
-   std::string line;
-   for (int i = 0; i < meta_data_lines; ++i) {
-      std::getline(ifile, line);
-      Lexer::Line pair = Lexer::parse(line);
-      if (!std::strcmp(pair.name.c_str(), "ncols")) {
-         xn = pair.value;
-         continue;
-      }
-      if (!std::strcmp(pair.name.c_str(), "nrows")) {
-         yn = pair.value;
-         continue;
-      }
-      if (!std::strcmp(pair.name.c_str(), "NODATA_value")) {
-         NODATA_value = pair.value;
-         continue;
-      }
-      if (!std::strcmp(pair.name.c_str(), "cellsize")) {
-         cellsize = pair.value;
-         continue;
-      }
-   }
-   altitudeMap = {};
+void SecondApp::loadGameObjects(const char* map, const char* vege) {
+   Lexer::Ascf altitudeAsc = Lexer::loadf(map);
+   altitudeMap = altitudeAsc.body;
    glm::float32 min = NAN;
-   for (std::string line; std::getline(ifile, line);) {
-      std::vector<std::string> altitudeMapIn = Lexer::tokenize(line);
-      std::vector<glm::float32> aux = {};
-      for (int x = 0; x < xn; ++x) {
-         int val = std::stoi(altitudeMapIn[x]);
-         if (val == NODATA_value) {
-            val = 0;
+   for (std::vector<glm::float32>& row : altitudeMap) {
+      for (glm::float32& cell : row) {
+         if (cell == altitudeAsc.NODATA_value) {
+            cell = 0;
          }
-         glm::float32 alt{static_cast<float>(val) / cellsize};
-         min = min != NAN && min < alt ? min : alt;
-         aux.push_back(alt);
+         glm::float32 alt{cell / altitudeAsc.cellsize};
+         cell = alt;
+         min = min != NAN && min < cell ? min : cell;
       }
-      altitudeMap.push_back(aux);
    }
    for (std::vector<glm::float32>& row : altitudeMap) {
       for (glm::float32& cell : row) {
          cell -= min;
       }
    }
+   yn = altitudeMap.size();
+   xn = altitudeMap[0].size();
+   Lexer::Asci vegetationAsc = Lexer::loadi(vege);
+   std::vector<std::vector<glm::int32>> vegetationMap = vegetationAsc.body;
+   std::vector<std::vector<glm::vec3>> colorMap;
+   for (std::vector<glm::int32> row : vegetationMap) {
+      std::vector<glm::vec3> aux;
+      for (glm::int32 cell : row) {
+         aux.push_back(glm::vec3{cell, cell, cell});
+      }
+		colorMap.push_back(aux);
+   }
 
-   terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap);
+   terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap, colorMap);
 }
 
 }  // namespace lve

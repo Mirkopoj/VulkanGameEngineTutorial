@@ -1,0 +1,24 @@
+ROWS=801
+COLS=801
+celdas_prom=20
+XIGNI=410
+YIGNI=238
+
+fullscreen=1 #para que el programa inicie en pantalla completa
+
+REAL_FIRE_MAP=grani_inc.asc#comen tario medio largooooooooo 
+ #comentario
+
+WIND_MAP=grani_viento.asc
+INT_WIND=grani_pend.asc
+ 
+ELEV_MAP=grani_alti.asc#comento
+FOREST_MAP=grani_bosque.asc
+SLOPE_MAP=grani_pend.asc
+ASPECT_MAP=grani_ori.asc
+ZA=VALOR
+ALTI_MAP=grani_alti.asc
+VEGETATION_MAP=grani_vege_comb.asc
+PALETA=paleta.txt
+
+

@@ -1,0 +1,23 @@
+ROWS=1201
+COLS=1201
+celdas_prom=20
+XIGNI=410
+YIGNI=238
+
+fullscreen=1 #para que el programa inicie en pantalla completa
+
+REAL_FIRE_MAP=bosque_cholila.asc
+
+WIND_MAP=pendiente_cholila.asc
+INT_WIND=pendiente_cholila.asc
+ 
+ELEV_MAP=dem_cholila.asc
+FOREST_MAP=bosque_cholila.asc
+SLOPE_MAP=pendiente_cholila.asc
+ASPECT_MAP=aspect_cholila.asc
+ZA=VALOR
+ALTI_MAP=dem_cholila.asc
+VEGETATION_MAP=vegetacion_cholila.asc
+PALETA=paleta.txt
+
+

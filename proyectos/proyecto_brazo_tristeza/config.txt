@@ -1,0 +1,23 @@
+ROWS=1201
+COLS=2401
+celdas_prom=20
+XIGNI=700
+YIGNI=700
+
+fullscreen=1 #para que el programa inicie en pantalla completa
+
+REAL_FIRE_MAP=bosque_brazo_tristeza_ok.asc
+
+WIND_MAP=dir_viento_brazo_tristeza.asc
+INT_WIND=vel_viento_brazo_tristeza.asc
+ 
+ELEV_MAP=DEM_brazo_tristeza.asc
+FOREST_MAP=bosque_brazo_tristeza.asc
+SLOPE_MAP=pendiente_brazo_tristeza.asc
+ASPECT_MAP=aspect_brazo_tristeza.asc
+ZA=VALOR
+ALTI_MAP=DEM_brazo_tristeza.asc
+VEGETATION_MAP=vege_brazo_tristeza.asc
+PALETA=paleta.txt
+
+
