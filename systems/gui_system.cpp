@@ -5,6 +5,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include <cstdio>
+#include <set>
 
 #include "../imgui/imgui_impl_glfw.h"
 #include "../imgui/imgui_impl_vulkan.h"
@@ -52,7 +53,8 @@ void ImGuiGui::new_frame() {
 }
 
 void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
-                      bool &caminata, std::string &path) {
+                      bool &caminata, std::string &path,
+                      const std::set<std::string> &recent, int &curr) {
    ImGui::Begin("Sensibilidad");
    ImGui::SliderFloat("Velocidad minima", &cameraControler.moveSpeedMin,
                       0.1f, cameraControler.moveSpeedMax);
@@ -70,9 +72,20 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
    ImGui::End();
    caminata = caminata_i;
 
+   const char *list[recent.size()];
+   int i = 0;
+   for (const std::string &str : recent) {
+      list[i] = str.c_str();
+      ++i;
+   }
+   int prev = curr;
    ImGui::Begin("Proyect selector");
    ImGui::InputText("current", &path);
+   ImGui::ListBox("recent", &curr, list, recent.size());
    ImGui::End();
+   if (prev != curr) {
+      path = list[curr];
+   }
 }
 
 void ImGuiGui::render(VkCommandBuffer command_buffer) {

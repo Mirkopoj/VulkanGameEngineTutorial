@@ -14,6 +14,7 @@
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -170,7 +171,7 @@ void SecondApp::run() {
          ubo.cols = xn;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
-         myimgui.update(cameraController, caminata, new_path);
+         myimgui.update(cameraController, caminata, new_path, maps, curr);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -187,8 +188,9 @@ void SecondApp::run() {
       if (new_path != path) {
          try {
             loadGameObjects(new_path.c_str());
-				path = new_path;
-         } catch (...) { }
+            path = new_path;
+         } catch (...) {
+         }
       }
    }
 
@@ -245,6 +247,11 @@ void SecondApp::loadGameObjects(const char* new_path) {
    altitudeMap = temp_altitudeMap;
    terrain = std::move(temp_terrain);
    path = new_path;
+   std::pair<std::set<std::string>::iterator, bool> insert_result =
+       maps.insert(path);
+   if (insert_result.second) {
+      curr = std::distance(maps.begin(), insert_result.first);
+   }
 }
 
 }  // namespace lve

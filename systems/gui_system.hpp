@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <set>
 
 #include "../lve/lve_device.hpp"
 #include "../lve/lve_renderer.hpp"
@@ -26,7 +27,8 @@ class ImGuiGui {
    ~ImGuiGui();
 
    void new_frame();
-   void update(lve::TerrainMovementController &, bool &, std::string &);
+   void update(lve::TerrainMovementController &, bool &, std::string &,
+               const std::set<std::string> &, int &);
    void render(VkCommandBuffer command_buffer);
 
   private:

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include <memory>
+#include <set>
 
 #include "../lve/lve_descriptors.hpp"
 #include "../lve/lve_device.hpp"
@@ -43,5 +44,8 @@ class SecondApp {
    uint32_t yn = 0;
 
    std::vector<std::vector<glm::float32>> altitudeMap = {};
+
+	std::set<std::string> maps = {};
+	int curr = 0;
 };
 }  // namespace lve
