@@ -15,6 +15,7 @@
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "../asc_process/Lexer.hpp"
@@ -38,8 +39,7 @@
 
 namespace lve {
 
-SecondApp::SecondApp(const char* map, const char* vege,
-                     const char* palet) {
+SecondApp::SecondApp(const char* path) {
    globalPool = LveDescriptorPool::Builder(lveDevice)
                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -53,7 +53,7 @@ SecondApp::SecondApp(const char* map, const char* vege,
            .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
            .build();
 
-   loadGameObjects(map, vege, palet);
+   loadGameObjects(path);
 }
 
 SecondApp::~SecondApp() {
@@ -169,9 +169,12 @@ void SecondApp::run() {
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-void SecondApp::loadGameObjects(const char* map, const char* vege,
-                                const char* palet) {
-   Lexer::Ascf altitudeAsc = Lexer::loadf(map);
+void SecondApp::loadGameObjects(const char* path) {
+   Lexer::Config config(path);
+   yn = std::stoi(config.value("ROWS"));
+   xn = std::stoi(config.value("COLS"));
+   Lexer::Ascf altitudeAsc = Lexer::loadf(
+       (config.get_path() + config.value("ELEV_MAP")).c_str());
    altitudeMap = altitudeAsc.body;
    glm::float32 min = NAN;
    for (std::vector<glm::float32>& row : altitudeMap) {
@@ -189,12 +192,12 @@ void SecondApp::loadGameObjects(const char* map, const char* vege,
          cell -= min;
       }
    }
-   yn = altitudeMap.size();
-   xn = altitudeMap[0].size();
-   Lexer::Asci vegetationAsc = Lexer::loadi(vege);
+   Lexer::Asci vegetationAsc = Lexer::loadi(
+       (config.get_path() + config.value("VEGETATION_MAP")).c_str());
    std::vector<std::vector<glm::int32>> vegetationMap = vegetationAsc.body;
    std::vector<std::vector<glm::vec3>> colorMap;
-   Lexer::PaletDB paletDb{palet};
+   Lexer::PaletDB paletDb{
+       (config.get_path() + config.value("PALETA")).c_str()};
    for (std::vector<glm::int32> row : vegetationMap) {
       std::vector<glm::vec3> aux;
       for (glm::int32 cell : row) {

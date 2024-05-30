@@ -16,7 +16,7 @@ class SecondApp {
    static constexpr int WIDTH = 800;
    static constexpr int HEIGHT = 600;
 
-   SecondApp(const char *, const char *, const char *);
+   SecondApp(const char *);
    ~SecondApp();
 
    SecondApp(const SecondApp &) = delete;
@@ -25,7 +25,7 @@ class SecondApp {
    void run();
 
   private:
-   void loadGameObjects(const char *, const char *, const char *);
+   void loadGameObjects(const char *);
 
    LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
    LveDevice lveDevice{lveWindow};

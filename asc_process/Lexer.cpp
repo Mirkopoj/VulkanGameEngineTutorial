@@ -6,8 +6,28 @@
 #include <cstring>
 #include <fstream>
 #include <glm/ext/scalar_int_sized.hpp>
+#include <string>
 
 namespace Lexer {
+
+Config::Config(std::string path) : path(path) {
+   std::ifstream ifile(path + "config.txt");
+   char key[255];
+   char value[255];
+   for (std::string line; std::getline(ifile, line);) {
+      if (sscanf(line.c_str(), "%[^=]=%[^#]", key, value)) {
+         config[key] = value;
+      }
+   }
+}
+
+std::string Config::value(std::string key) {
+   return config[key];
+}
+
+std::string Config::get_path() {
+   return path;
+}
 
 PaletDB::PaletDB(const char *path) {
    std::ifstream ifile(path);

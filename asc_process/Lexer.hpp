@@ -13,6 +13,18 @@
 
 namespace Lexer {
 
+class Config {
+  public:
+   Config(std::string);
+
+   std::string value(std::string key);
+   std::string get_path();
+
+  private:
+   std::string path;
+   std::map<std::string, std::string> config = {};
+};
+
 class PaletDB {
   public:
    typedef struct {

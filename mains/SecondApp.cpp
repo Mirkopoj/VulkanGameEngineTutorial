@@ -5,7 +5,7 @@
 #include "../apps/second_app.hpp"
 
 int main(int argc, char* argv[]) {
-   lve::SecondApp app{argv[1], argv[2], argv[3]};
+   lve::SecondApp app{argv[1]};
 
    try {
       app.run();
