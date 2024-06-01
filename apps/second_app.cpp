@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <future>
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
@@ -20,11 +21,11 @@
 #include <string>
 #include <vector>
 
+#include "../asc_process/Lexer.hpp"
 #include "../lve/lve_buffer.hpp"
 #include "../lve/lve_camera.hpp"
 #include "../lve/lve_descriptors.hpp"
 #include "../lve/lve_device.hpp"
-#include "../lve/lve_game_object.hpp"
 #include "../lve/lve_swap_chain.hpp"
 #include "../lve/lve_terrain.hpp"
 #include "../movement_controllers/terrain_movement_controller.hpp"
@@ -109,19 +110,8 @@ void SecondApp::run() {
    LveCamera camera{};
 
    float cameraHeight = 2.f;
-   auto viewerObject = LveGameObject::createGameObject();
-   viewerObject.transform.translation.x = static_cast<float>(xn - 1) / 2.f;
-   viewerObject.transform.translation.z = static_cast<float>(yn - 1) / 2.f;
-   uint32_t x = glm::clamp(
-       xn - (uint32_t)roundf(viewerObject.transform.translation.x),
-       (uint32_t)0, xn - 1);
-   uint32_t y =
-       glm::clamp((uint32_t)roundf(viewerObject.transform.translation.z),
-                  (uint32_t)0, yn - 1);
-   if (xn && yn) {
-      viewerObject.transform.translation.y =
-          -cameraHeight - altitudeMap[y][x];
-   }
+   LveGameObject viewerObject = LveGameObject::createGameObject();
+   fixViewer(viewerObject, cameraHeight);
 
    TerrainMovementController cameraController{};
 
@@ -194,19 +184,24 @@ void SecondApp::run() {
           loadingState.wait_for(std::chrono::duration(
               std::chrono::seconds(0))) == std::future_status::ready) {
          loadingTerrain = false;
-         NewMap newMap = loadingState.get();
-         altitudeMap = newMap.altitudeMap;
-         xn = newMap.xn;
-         yn = newMap.yn;
-         terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap,
-                                                   newMap.colorMap);
+         try {
+            NewMap newMap = loadingState.get();
+            altitudeMap = newMap.altitudeMap;
+            xn = newMap.xn;
+            yn = newMap.yn;
+            terrain =
+                std::make_unique<LveTerrain>(lveDevice, newMap.builder);
+            fixViewer(viewerObject, cameraHeight);
+         } catch (...) {
+         }
       }
    }
 
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-SecondApp::NewMap SecondApp::loadGameObjects(Lexer::Config config) {
+SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
+   Lexer::Config config(new_path);
    NewMap newMap;
 
    newMap.yn = std::stoi(config.value("ROWS"));
@@ -233,6 +228,7 @@ SecondApp::NewMap SecondApp::loadGameObjects(Lexer::Config config) {
    Lexer::Asci vegetationAsc = Lexer::loadi(
        (config.get_path() + config.value("VEGETATION_MAP")).c_str());
    std::vector<std::vector<glm::int32>> vegetationMap = vegetationAsc.body;
+   std::vector<std::vector<glm::vec3>> colorMap;
    Lexer::PaletDB paletDb{
        (config.get_path() + config.value("PALETA")).c_str()};
    for (std::vector<glm::int32> row : vegetationMap) {
@@ -241,9 +237,12 @@ SecondApp::NewMap SecondApp::loadGameObjects(Lexer::Config config) {
          Lexer::PaletDB::Color color = paletDb.color(cell);
          aux.push_back(color.color);
       }
-      newMap.colorMap.push_back(aux);
+      colorMap.push_back(aux);
    }
 
+   newMap.builder.generateMesh(newMap.altitudeMap, colorMap);
+
+   path = new_path;
    std::pair<std::set<std::string>::iterator, bool> insert_result =
        maps.insert(path);
    if (insert_result.second) {
@@ -254,13 +253,27 @@ SecondApp::NewMap SecondApp::loadGameObjects(Lexer::Config config) {
 
 void SecondApp::asyncLoadGameObjects(const char* new_path) {
    lastTryedPath = new_path;
-   try {
-      Lexer::Config config(new_path);
+   if (std::filesystem::exists(
+           std::filesystem::path(std::string(new_path) + "config.txt"))) {
+      loadingState = std::async(
+          std::launch::async, &SecondApp::loadGameObjects, this, new_path);
       loadingTerrain = true;
-      path = new_path;
-      loadingState = std::async(std::launch::async,
-                                &SecondApp::loadGameObjects, this, config);
-   } catch (...) {
+   }
+}
+
+void SecondApp::fixViewer(LveGameObject& viewerObject,
+                          float cameraHeight) {
+   viewerObject.transform.translation.x = static_cast<float>(xn - 1) / 2.f;
+   viewerObject.transform.translation.z = static_cast<float>(yn - 1) / 2.f;
+   uint32_t x = glm::clamp(
+       xn - (uint32_t)roundf(viewerObject.transform.translation.x),
+       (uint32_t)0, xn - 1);
+   uint32_t y =
+       glm::clamp((uint32_t)roundf(viewerObject.transform.translation.z),
+                  (uint32_t)0, yn - 1);
+   if (xn && yn) {
+      viewerObject.transform.translation.y =
+          -cameraHeight - altitudeMap[y][x];
    }
 }
 

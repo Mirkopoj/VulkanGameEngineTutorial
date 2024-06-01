@@ -6,7 +6,7 @@
 #include <memory>
 #include <set>
 
-#include "../asc_process/Lexer.hpp"
+#include "../lve/lve_game_object.hpp"
 #include "../lve/lve_descriptors.hpp"
 #include "../lve/lve_device.hpp"
 #include "../lve/lve_renderer.hpp"
@@ -34,7 +34,7 @@ class SecondApp {
       uint32_t yn;
       uint32_t xn;
       std::vector<std::vector<glm::float32>> altitudeMap;
-      std::vector<std::vector<glm::vec3>> colorMap;
+		LveTerrain::Builder builder;
    };
 
   private:
@@ -60,6 +60,8 @@ class SecondApp {
    std::future<NewMap> loadingState;
    bool loadingTerrain = false;
 
-   NewMap loadGameObjects(Lexer::Config);
+   NewMap loadGameObjects(const char *);
+
+	void fixViewer(LveGameObject &, float);
 };
 }  // namespace lve
