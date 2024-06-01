@@ -7,7 +7,7 @@
 int main(int argc, char* argv[]) {
    lve::SecondApp app{};
 	if (argc > 1) {
-		app.loadGameObjects(argv[1]);
+		app.asyncLoadGameObjects(argv[1]);
 	}
 
    try {

@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <future>
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -19,7 +20,6 @@
 #include <string>
 #include <vector>
 
-#include "../asc_process/Lexer.hpp"
 #include "../lve/lve_buffer.hpp"
 #include "../lve/lve_camera.hpp"
 #include "../lve/lve_descriptors.hpp"
@@ -68,7 +68,7 @@ SecondApp::SecondApp(const char* path)
               .setPoolFlags(
                   VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
               .build()) {
-   loadGameObjects(path);
+   asyncLoadGameObjects(path);
 }
 
 SecondApp::~SecondApp() {
@@ -171,7 +171,8 @@ void SecondApp::run() {
          ubo.cols = xn;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
-         myimgui.update(cameraController, caminata, new_path, maps, curr);
+         myimgui.update(cameraController, caminata, new_path, maps, curr,
+                        loadingTerrain);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -185,32 +186,36 @@ void SecondApp::run() {
          lveRenderer.endFrame();
       }
 
-      if (new_path != path) {
-         try {
-            loadGameObjects(new_path.c_str());
-            path = new_path;
-         } catch (...) {
-         }
+      if (new_path != lastTryedPath && !loadingTerrain) {
+         asyncLoadGameObjects(new_path.c_str());
+      }
+
+      if (loadingState.valid() &&
+          loadingState.wait_for(std::chrono::duration(
+              std::chrono::seconds(0))) == std::future_status::ready) {
+         loadingTerrain = false;
+         NewMap newMap = loadingState.get();
+         altitudeMap = newMap.altitudeMap;
+         xn = newMap.xn;
+         yn = newMap.yn;
+         terrain = LveTerrain::createModelFromMesh(lveDevice, altitudeMap,
+                                                   newMap.colorMap);
       }
    }
 
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-void SecondApp::loadGameObjects(const char* new_path) {
-   uint32_t temp_yn;
-   uint32_t temp_xn;
-   std::vector<std::vector<glm::float32>> temp_altitudeMap;
-   std::unique_ptr<LveTerrain> temp_terrain;
+SecondApp::NewMap SecondApp::loadGameObjects(Lexer::Config config) {
+   NewMap newMap;
 
-   Lexer::Config config(new_path);
-   temp_yn = std::stoi(config.value("ROWS"));
-   temp_xn = std::stoi(config.value("COLS"));
+   newMap.yn = std::stoi(config.value("ROWS"));
+   newMap.xn = std::stoi(config.value("COLS"));
    Lexer::Ascf altitudeAsc = Lexer::loadf(
        (config.get_path() + config.value("ELEV_MAP")).c_str());
-   temp_altitudeMap = altitudeAsc.body;
+   newMap.altitudeMap = altitudeAsc.body;
    glm::float32 min = NAN;
-   for (std::vector<glm::float32>& row : temp_altitudeMap) {
+   for (std::vector<glm::float32>& row : newMap.altitudeMap) {
       for (glm::float32& cell : row) {
          if (cell == altitudeAsc.NODATA_value) {
             cell = 0;
@@ -220,7 +225,7 @@ void SecondApp::loadGameObjects(const char* new_path) {
          min = min != NAN && min < cell ? min : cell;
       }
    }
-   for (std::vector<glm::float32>& row : temp_altitudeMap) {
+   for (std::vector<glm::float32>& row : newMap.altitudeMap) {
       for (glm::float32& cell : row) {
          cell -= min;
       }
@@ -228,7 +233,6 @@ void SecondApp::loadGameObjects(const char* new_path) {
    Lexer::Asci vegetationAsc = Lexer::loadi(
        (config.get_path() + config.value("VEGETATION_MAP")).c_str());
    std::vector<std::vector<glm::int32>> vegetationMap = vegetationAsc.body;
-   std::vector<std::vector<glm::vec3>> colorMap;
    Lexer::PaletDB paletDb{
        (config.get_path() + config.value("PALETA")).c_str()};
    for (std::vector<glm::int32> row : vegetationMap) {
@@ -237,20 +241,26 @@ void SecondApp::loadGameObjects(const char* new_path) {
          Lexer::PaletDB::Color color = paletDb.color(cell);
          aux.push_back(color.color);
       }
-      colorMap.push_back(aux);
+      newMap.colorMap.push_back(aux);
    }
-   temp_terrain = LveTerrain::createModelFromMesh(
-       lveDevice, temp_altitudeMap, colorMap);
 
-   xn = temp_xn;
-   yn = temp_yn;
-   altitudeMap = temp_altitudeMap;
-   terrain = std::move(temp_terrain);
-   path = new_path;
    std::pair<std::set<std::string>::iterator, bool> insert_result =
        maps.insert(path);
    if (insert_result.second) {
       curr = std::distance(maps.begin(), insert_result.first);
+   }
+   return newMap;
+}
+
+void SecondApp::asyncLoadGameObjects(const char* new_path) {
+   lastTryedPath = new_path;
+   try {
+      Lexer::Config config(new_path);
+      loadingTerrain = true;
+      path = new_path;
+      loadingState = std::async(std::launch::async,
+                                &SecondApp::loadGameObjects, this, config);
+   } catch (...) {
    }
 }
 

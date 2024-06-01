@@ -2,9 +2,11 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <future>
 #include <memory>
 #include <set>
 
+#include "../asc_process/Lexer.hpp"
 #include "../lve/lve_descriptors.hpp"
 #include "../lve/lve_device.hpp"
 #include "../lve/lve_renderer.hpp"
@@ -26,7 +28,14 @@ class SecondApp {
 
    void run();
 
-   void loadGameObjects(const char *);
+   void asyncLoadGameObjects(const char *);
+
+   struct NewMap {
+      uint32_t yn;
+      uint32_t xn;
+      std::vector<std::vector<glm::float32>> altitudeMap;
+      std::vector<std::vector<glm::vec3>> colorMap;
+   };
 
   private:
    LveWindow lveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
@@ -37,6 +46,7 @@ class SecondApp {
    std::unique_ptr<LveDescriptorPool> imguiPool{};
 
    std::string path = "";
+   std::string lastTryedPath = "";
 
    std::unique_ptr<LveTerrain> terrain = nullptr;
 
@@ -45,7 +55,11 @@ class SecondApp {
 
    std::vector<std::vector<glm::float32>> altitudeMap = {};
 
-	std::set<std::string> maps = {};
-	int curr = 0;
+   std::set<std::string> maps = {};
+   int curr = 0;
+   std::future<NewMap> loadingState;
+   bool loadingTerrain = false;
+
+   NewMap loadGameObjects(Lexer::Config);
 };
 }  // namespace lve

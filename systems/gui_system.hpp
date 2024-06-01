@@ -28,18 +28,6 @@ class ImGuiGui {
 
    void new_frame();
    void update(lve::TerrainMovementController &, bool &, std::string &,
-               const std::set<std::string> &, int &);
+               const std::set<std::string> &, int &, bool &);
    void render(VkCommandBuffer command_buffer);
-
-  private:
-   /*
-typedef struct {
- std::string buf;
- float f;
- int shader_count;
- int first_shader;
- int second_shader;
-} State;
-
-State state;*/
 };
