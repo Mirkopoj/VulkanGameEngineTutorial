@@ -23,7 +23,7 @@ layout(push_constant) uniform Push {
 push;
 
 void main() {
-	vec3 lightColor = vec3(1.0);
+	vec3 lightColor = vec3(0.9921568627,0.9843137255,0.8274509804);
    vec3 ambientLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
    vec3 diffuseLight = lightColor * max(dot(normalize(fragNormalWorld), normalize(ubo.lightPosition)),0.0);
    //vec3 specularLight = vec3(0.3);
