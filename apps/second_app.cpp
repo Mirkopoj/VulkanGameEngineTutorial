@@ -122,6 +122,8 @@ void SecondApp::run() {
    bool caminata = false;
 
    std::string new_path = path;
+   size_t pipeline = 0;
+
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
 
@@ -162,13 +164,15 @@ void SecondApp::run() {
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
          myimgui.update(cameraController, caminata, new_path, maps, curr,
-                        loadingTerrain);
+                        loadingTerrain, pipeline);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
 
          if (terrain) {
-            terrainRenderSystem.renderTerrain(frameInfo);
+            terrainRenderSystem.renderTerrain(
+                frameInfo,
+                static_cast<TerrainRenderSystem::PipeLineType>(pipeline));
          }
          myimgui.render(commandBuffer);
 

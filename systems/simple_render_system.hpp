@@ -3,12 +3,9 @@
 #include <vulkan/vulkan_core.h>
 
 #include <memory>
-#include <vector>
 
-#include "../lve/lve_camera.hpp"
 #include "../lve/lve_device.hpp"
 #include "../apps/first_app_frame_info.hpp"
-#include "../lve/lve_game_object.hpp"
 #include "../lve/lve_pipeline.hpp"
 
 namespace lve {

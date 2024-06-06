@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <vector>
@@ -25,7 +26,8 @@ TerrainRenderSystem::TerrainRenderSystem(
     const std::string &fragFilepath)
     : lveDevice{device} {
    createPipelineLayout(globalSetLayout);
-   createPipeline(renderPass, vertFilepath, fragFilepath);
+   createPipeline(renderPass, vertFilepath, fragFilepath, PipeLineType::Normal);
+   createPipeline(renderPass, vertFilepath, fragFilepath, PipeLineType::WireFrame);
 }
 
 TerrainRenderSystem::~TerrainRenderSystem() {
@@ -59,7 +61,8 @@ void TerrainRenderSystem::createPipelineLayout(
 
 void TerrainRenderSystem::createPipeline(VkRenderPass renderPass,
                                          const std::string &vertFilepath,
-                                         const std::string &fragFilepath) {
+                                         const std::string &fragFilepath,
+                                         PipeLineType pipeline) {
    assert(pipelineLayout != nullptr &&
           "Cannot create pipeline before pipeline layout");
 
@@ -68,19 +71,11 @@ void TerrainRenderSystem::createPipeline(VkRenderPass renderPass,
    pipelineConfig.inputAssemblyInfo.topology =
        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
-   pipelineConfig.rasterizationInfo.sType =
-       VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-   pipelineConfig.rasterizationInfo.depthClampEnable = VK_FALSE;
-   pipelineConfig.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
-   pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
-   pipelineConfig.rasterizationInfo.lineWidth = 1.0f;
-   pipelineConfig.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
-   pipelineConfig.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-   pipelineConfig.rasterizationInfo.depthBiasEnable = VK_FALSE;
-   pipelineConfig.rasterizationInfo.depthBiasConstantFactor = 0.0f;
-   pipelineConfig.rasterizationInfo.depthBiasClamp = 0.0f;
-   pipelineConfig.rasterizationInfo.depthBiasSlopeFactor = 0.0f;
-
+   if (pipeline == PipeLineType::WireFrame) {
+      pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
+      pipelineConfig.rasterizationInfo.lineWidth = 1.0f;
+      pipelineConfig.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
+   }
 
    pipelineConfig.bindingDescriptions =
        LveTerrain::Vertex::getBindingDescriptions();
@@ -88,12 +83,12 @@ void TerrainRenderSystem::createPipeline(VkRenderPass renderPass,
        LveTerrain::Vertex::getAttributeDescriptions();
    pipelineConfig.renderPass = renderPass;
    pipelineConfig.pipelineLayout = pipelineLayout;
-   lvePipeline = std::make_unique<LvePipeline>(
+   lvePipeline[static_cast<size_t>(pipeline)] = std::make_unique<LvePipeline>(
        lveDevice, vertFilepath, fragFilepath, pipelineConfig);
 }
 
-void TerrainRenderSystem::renderTerrain(FrameInfo &frameInfo) {
-   lvePipeline->bind(frameInfo.commandBuffer);
+void TerrainRenderSystem::renderTerrain(FrameInfo &frameInfo, PipeLineType pipeline) {
+   lvePipeline[static_cast<size_t>(pipeline)]->bind(frameInfo.commandBuffer);
 
    vkCmdBindDescriptorSets(
        frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
