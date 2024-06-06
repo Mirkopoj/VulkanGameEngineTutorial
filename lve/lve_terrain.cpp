@@ -16,8 +16,6 @@
 #include <cassert>
 #include <cstring>
 
-namespace std {}  // namespace std
-
 namespace lve {
 
 LveTerrain::LveTerrain(LveDevice &device,

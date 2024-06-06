@@ -67,6 +67,21 @@ void TerrainRenderSystem::createPipeline(VkRenderPass renderPass,
    LvePipeline::defaultPipelineConfigInfo(pipelineConfig);
    pipelineConfig.inputAssemblyInfo.topology =
        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+
+   pipelineConfig.rasterizationInfo.sType =
+       VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+   pipelineConfig.rasterizationInfo.depthClampEnable = VK_FALSE;
+   pipelineConfig.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
+   pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
+   pipelineConfig.rasterizationInfo.lineWidth = 1.0f;
+   pipelineConfig.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
+   pipelineConfig.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+   pipelineConfig.rasterizationInfo.depthBiasEnable = VK_FALSE;
+   pipelineConfig.rasterizationInfo.depthBiasConstantFactor = 0.0f;
+   pipelineConfig.rasterizationInfo.depthBiasClamp = 0.0f;
+   pipelineConfig.rasterizationInfo.depthBiasSlopeFactor = 0.0f;
+
+
    pipelineConfig.bindingDescriptions =
        LveTerrain::Vertex::getBindingDescriptions();
    pipelineConfig.attributeDescriptions =
