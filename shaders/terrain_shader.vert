@@ -11,7 +11,6 @@ layout(location = 2) out vec3 fragNormalWorld;
 layout(set = 0, binding = 0) uniform GloablUbo {
    mat4 projection;
    mat4 view;
-   mat4 invView;
    vec4 ambientLightColor;
 	vec3 lightPosition;
 	uint cols;

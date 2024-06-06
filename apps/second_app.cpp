@@ -152,6 +152,7 @@ void SecondApp::run() {
                              commandBuffer,
                              camera,
                              globalDescriptorSets[frameIndex],
+                             terrain,
                              terrain};
          myimgui.new_frame();
 
@@ -159,7 +160,6 @@ void SecondApp::run() {
          GlobalUbo ubo{};
          ubo.projection = camera.getProjection();
          ubo.view = camera.getView();
-         ubo.inverseView = camera.getInverseView();
          ubo.cols = xn;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();

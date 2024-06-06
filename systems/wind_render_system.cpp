@@ -1,8 +1,7 @@
-#include "terrain_render_system.hpp"
+#include "wind_render_system.hpp"
 
 #include <vulkan/vulkan_core.h>
 
-#include <cstddef>
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <vector>
@@ -20,23 +19,21 @@ struct SimplePushConstantData {
    glm::mat4 normalMatrix{1.f};
 };
 
-TerrainRenderSystem::TerrainRenderSystem(
-    LveDevice &device, VkRenderPass renderPass,
-    VkDescriptorSetLayout globalSetLayout, const std::string &vertFilepath,
-    const std::string &fragFilepath)
+WindRenderSystem::WindRenderSystem(LveDevice &device,
+                                   VkRenderPass renderPass,
+                                   VkDescriptorSetLayout globalSetLayout,
+                                   const std::string &vertFilepath,
+                                   const std::string &fragFilepath)
     : lveDevice{device} {
    createPipelineLayout(globalSetLayout);
-   createPipeline(renderPass, vertFilepath, fragFilepath,
-                  PipeLineType::Normal);
-   createPipeline(renderPass, vertFilepath, fragFilepath,
-                  PipeLineType::WireFrame);
+   createPipeline(renderPass, vertFilepath, fragFilepath);
 }
 
-TerrainRenderSystem::~TerrainRenderSystem() {
+WindRenderSystem::~WindRenderSystem() {
    vkDestroyPipelineLayout(lveDevice.device(), pipelineLayout, nullptr);
 }
 
-void TerrainRenderSystem::createPipelineLayout(
+void WindRenderSystem::createPipelineLayout(
     VkDescriptorSetLayout globalSetLayout) {
    VkPushConstantRange pushConstantRange{};
    pushConstantRange.stageFlags =
@@ -61,23 +58,17 @@ void TerrainRenderSystem::createPipelineLayout(
    }
 }
 
-void TerrainRenderSystem::createPipeline(VkRenderPass renderPass,
-                                         const std::string &vertFilepath,
-                                         const std::string &fragFilepath,
-                                         PipeLineType pipeline) {
+void WindRenderSystem::createPipeline(VkRenderPass renderPass,
+                                      const std::string &vertFilepath,
+                                      const std::string &fragFilepath) {
    assert(pipelineLayout != nullptr &&
           "Cannot create pipeline before pipeline layout");
 
    PipelineConfigInfo pipelineConfig{};
    LvePipeline::defaultPipelineConfigInfo(pipelineConfig);
    pipelineConfig.inputAssemblyInfo.topology =
-       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-   if (pipeline == PipeLineType::WireFrame) {
-      pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
-      pipelineConfig.rasterizationInfo.lineWidth = 1.0f;
-      pipelineConfig.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
-   }
+       VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+   pipelineConfig.inputAssemblyInfo.primitiveRestartEnable = VK_TRUE;
 
    pipelineConfig.bindingDescriptions =
        LveTerrain::Vertex::getBindingDescriptions();
@@ -85,15 +76,12 @@ void TerrainRenderSystem::createPipeline(VkRenderPass renderPass,
        LveTerrain::Vertex::getAttributeDescriptions();
    pipelineConfig.renderPass = renderPass;
    pipelineConfig.pipelineLayout = pipelineLayout;
-   lvePipeline[static_cast<size_t>(pipeline)] =
-       std::make_unique<LvePipeline>(lveDevice, vertFilepath, fragFilepath,
-                                     pipelineConfig);
+   lvePipeline = std::make_unique<LvePipeline>(
+       lveDevice, vertFilepath, fragFilepath, pipelineConfig);
 }
 
-void TerrainRenderSystem::renderTerrain(FrameInfo &frameInfo,
-                                        PipeLineType pipeline) {
-   lvePipeline[static_cast<size_t>(pipeline)]->bind(
-       frameInfo.commandBuffer);
+void WindRenderSystem::renderWind(FrameInfo &frameInfo) {
+   lvePipeline->bind(frameInfo.commandBuffer);
 
    vkCmdBindDescriptorSets(
        frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -149,8 +137,8 @@ void TerrainRenderSystem::renderTerrain(FrameInfo &frameInfo,
        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
        sizeof(SimplePushConstantData), &push);
 
-   frameInfo.terrain->bind(frameInfo.commandBuffer);
-   frameInfo.terrain->draw(frameInfo.commandBuffer);
+   frameInfo.wind->bind(frameInfo.commandBuffer);
+   frameInfo.wind->draw(frameInfo.commandBuffer);
 }
 
 }  // namespace lve
