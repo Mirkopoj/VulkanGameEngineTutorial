@@ -217,7 +217,7 @@ void LveWind::Builder::generateMesh(
                                 glm::clamp(1.f - d11, 0.f, 1.f) * v11;
 
             float amount = glm::length(moveDir);
-            vertex.color = color(amount / 150.f);
+            vertex.color = color(amount / 120.f);
 
             Vertex next_vertex = vertex;
             const float moveSpeed = 0.05;
@@ -254,12 +254,14 @@ glm::vec3 LveWind::color(float amount) {
    glm::vec3 ret;
    if (amount <= 0.5f) {
       amount *= 2.0f;
-      ret.r = 1.0f - amount;
+      ret.r = 0.f;
       ret.g = amount;
+      ret.b = 1.0f - amount;
    } else {
       amount = amount * 2.0f - 1.0f;
+      ret.r = amount;
       ret.g = 1.0f - amount;
-      ret.b = amount;
+      ret.b = 0.f;
    }
    return ret;
 }
