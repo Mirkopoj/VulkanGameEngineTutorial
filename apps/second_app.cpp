@@ -18,6 +18,7 @@
 #include <glm/geometric.hpp>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -274,17 +275,21 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
       std::vector<std::vector<glm::int32>> dirViento = dir_join.get();
       std::vector<std::vector<glm::float32>> velViento = vel_join.get();
       std::vector<std::vector<glm::vec2>> windSpeed;
+		float min = std::numeric_limits<float>::max();
+		float max = std::numeric_limits<float>::min();
       for (size_t y = 0; y < dirViento.size(); ++y) {
          std::vector<glm::vec2> row;
          for (size_t x = 0; x < dirViento[0].size(); ++x) {
             float angulo = dirViento[y][x] * glm::two_pi<float>() / 360.f;
             row.push_back(glm::vec2(glm::cos(angulo), glm::sin(angulo)) *
                           velViento[y][x]);
+				min = glm::min(min, velViento[y][x]);
+				max = glm::max(max, velViento[y][x]);
          }
          windSpeed.push_back(row);
       }
       altittude_join.wait();
-      newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed);
+      newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed, min, max);
       auto endTime = std::chrono::high_resolution_clock::now();
       float time =
           std::chrono::duration<float, std::chrono::seconds::period>(

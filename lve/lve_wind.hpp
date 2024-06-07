@@ -31,7 +31,8 @@ class LveWind {
 
       void generateMesh(
           const std::vector<std::vector<glm::float32>> &alttitudeMap,
-          const std::vector<std::vector<glm::vec2>> &wind_speed);
+          const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
+          float max);
    };
 
    LveWind(LveDevice &device, const LveWind::Builder &builder);
@@ -43,7 +44,8 @@ class LveWind {
    static std::unique_ptr<LveWind> createModelFromMesh(
        LveDevice &device,
        const std::vector<std::vector<glm::float32>> &alttitudeMap,
-       const std::vector<std::vector<glm::vec2>> &wind_speed);
+       const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
+       float max);
 
    void bind(VkCommandBuffer commandBuffer);
    void draw(VkCommandBuffer commandBuffer);
@@ -61,7 +63,7 @@ class LveWind {
    std::unique_ptr<LveBuffer> indexBuffer;
    uint32_t indexCount;
 
-	static glm::vec3 color(float amount);
+   static glm::vec3 color(float amount);
 };
 
 }  // namespace lve
