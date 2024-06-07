@@ -55,7 +55,8 @@ void ImGuiGui::new_frame() {
 void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
                       bool &caminata, std::string &path,
                       const std::set<std::string> &recent, int &curr,
-                      bool &loadingState, size_t & pipeline) {
+                      bool &loadingState, size_t &pipeline,
+                      glm::vec3 coord) {
    ImGui::Begin("Sensibilidad");
    ImGui::SliderFloat("Velocidad minima", &cameraControler.moveSpeedMin,
                       0.1f, cameraControler.moveSpeedMax);
@@ -63,6 +64,7 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
                       cameraControler.moveSpeedMin, 500.f);
    ImGui::SliderFloat("Sensibilidad del mouse", &cameraControler.lookSpeed,
                       0.1f, 20.f);
+   ImGui::Text("position: %f, %f, %f", coord.x, coord.y, coord.z);
    ImGui::End();
 
    int caminata_i = caminata;
@@ -74,13 +76,12 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
    caminata = caminata_i;
 
    int pipeline_i = pipeline;
-	ImGui::Begin("Modo de rederizado");
+   ImGui::Begin("Modo de rederizado");
    ImGui::RadioButton("Normal", &pipeline_i, 0);
    ImGui::SameLine();
    ImGui::RadioButton("WireFrame", &pipeline_i, 1);
    ImGui::End();
    pipeline = pipeline_i;
-
 
    ImGui::Begin("Proyect selector");
    if (!loadingState) {

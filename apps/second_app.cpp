@@ -31,6 +31,7 @@
 #include "../movement_controllers/terrain_movement_controller.hpp"
 #include "../systems/gui_system.hpp"
 #include "../systems/terrain_render_system.hpp"
+#include "../systems/wind_render_system.hpp"
 #include "second_app_frame_info.hpp"
 
 // libs
@@ -41,34 +42,10 @@
 
 namespace lve {
 
-SecondApp::SecondApp()
-    : globalPool(LveDescriptorPool::Builder(lveDevice)
-                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
-                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                  LveSwapChain::MAX_FRAMES_IN_FLIGHT)
-                     .build()),
-      imguiPool(
-          LveDescriptorPool::Builder(lveDevice)
-              .setMaxSets(4)
-              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4)
-              .setPoolFlags(
-                  VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
-              .build()) {
+SecondApp::SecondApp() {
 }
 
-SecondApp::SecondApp(const char* path)
-    : globalPool(LveDescriptorPool::Builder(lveDevice)
-                     .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
-                     .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                  LveSwapChain::MAX_FRAMES_IN_FLIGHT)
-                     .build()),
-      imguiPool(
-          LveDescriptorPool::Builder(lveDevice)
-              .setMaxSets(4)
-              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4)
-              .setPoolFlags(
-                  VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
-              .build()) {
+SecondApp::SecondApp(const char* path) {
    asyncLoadGameObjects(path);
 }
 
@@ -106,6 +83,11 @@ void SecondApp::run() {
        globalSetLayout->getDescriptorSetLayout(),
        "shaders/terrain_shader.vert.spv",
        "shaders/terrain_shader.frag.spv"};
+
+   WindRenderSystem windRenderSystem{
+       lveDevice, lveRenderer.getSwapChainRenderPass(),
+       globalSetLayout->getDescriptorSetLayout(),
+       "shaders/wind_shader.vert.spv", "shaders/wind_shader.frag.spv"};
 
    LveCamera camera{};
 
@@ -153,7 +135,7 @@ void SecondApp::run() {
                              camera,
                              globalDescriptorSets[frameIndex],
                              terrain,
-                             terrain};
+                             wind};
          myimgui.new_frame();
 
          // update
@@ -164,7 +146,8 @@ void SecondApp::run() {
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
          myimgui.update(cameraController, caminata, new_path, maps, curr,
-                        loadingTerrain, pipeline);
+                        loadingTerrain, pipeline,
+                        viewerObject.transform.translation);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -174,6 +157,7 @@ void SecondApp::run() {
                 frameInfo,
                 static_cast<TerrainRenderSystem::PipeLineType>(pipeline));
          }
+         windRenderSystem.renderWind(frameInfo);
          myimgui.render(commandBuffer);
 
          lveRenderer.endSwapChainRenderPass(commandBuffer);

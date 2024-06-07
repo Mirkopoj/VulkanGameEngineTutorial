@@ -18,8 +18,7 @@
 
 namespace lve {
 
-LveWind::LveWind(LveDevice &device,
-                       const LveWind::Builder &builder)
+LveWind::LveWind(LveDevice &device, const LveWind::Builder &builder)
     : lveDevice{device} {
    createVertexBuffers(builder.vertices);
    createIndexBuffers(builder.indices);
@@ -28,12 +27,9 @@ LveWind::LveWind(LveDevice &device,
 LveWind::~LveWind() {
 }
 
-std::unique_ptr<LveWind> LveWind::createModelFromMesh(
-    LveDevice &device,
-    const std::vector<std::vector<glm::float32>> alttitudeMap,
-    const std::vector<std::vector<glm::vec3>> colorMap) {
+std::unique_ptr<LveWind> LveWind::createModelFromMesh(LveDevice &device) {
    Builder builder{};
-   builder.generateMesh(alttitudeMap, colorMap);
+   builder.generateMesh();
 
    return std::make_unique<LveWind>(device, builder);
 }
@@ -132,69 +128,27 @@ LveWind::Vertex::getAttributeDescriptions() {
        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)});
    attributeDescriptions.push_back(
        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
-   attributeDescriptions.push_back(
-       {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
 
    return attributeDescriptions;
 }
 
-void LveWind::Builder::generateMesh(
-    const std::vector<std::vector<glm::float32>> alttitudeMap,
-    const std::vector<std::vector<glm::vec3>> colorMap) {
+void LveWind::Builder::generateMesh() {
    vertices.clear();
    indices.clear();
 
-   uint32_t yn = alttitudeMap.size();
-   if (!yn) return;
-   uint32_t xn = alttitudeMap[0].size();
-   if (!xn) return;
-   uint32_t total_verts = yn + (xn - 1) * (2 * yn - 2);
-   uint32_t n = 4 * xn - 2;
+   const int samples = 1000;
+   for (int i = 0; i < 10; ++i) {
+      for (int x = 0; x < samples; ++x) {
+         float y = glm::sin(x / 100.f) * 100;
 
-   for (int y = 0; y < yn; ++y) {
-      for (int x = xn - 1; x >= 0; --x) {
-         uint32_t xs = x == xn - 1 ? x : x + 1;
-         uint32_t xa = x == 0 ? x : x - 1;
-         uint32_t ys = y == yn - 1 ? y : y + 1;
-         uint32_t ya = y == 0 ? y : y - 1;
-
-         glm::vec3 x_y = {x, y, alttitudeMap[y][x]};
-         glm::vec3 xs_y = {xs, y, alttitudeMap[y][xs]};
-         glm::vec3 xa_y = {xa, y, alttitudeMap[y][xa]};
-         glm::vec3 x_ys = {x, ys, alttitudeMap[ys][x]};
-         glm::vec3 x_ya = {x, ya, alttitudeMap[ya][x]};
-
-         glm::vec3 x_a = x_y - x_ys;
-         glm::vec3 x_b = x_y - xs_y;
-         glm::vec3 x_c = x_y - x_ya;
-         glm::vec3 x_d = x_y - xa_y;
-
-         glm::vec3 n1 = glm::cross(x_a, x_b);
-         glm::vec3 n2 = glm::cross(x_b, x_c);
-         glm::vec3 n3 = glm::cross(x_c, x_d);
-         glm::vec3 n4 = glm::cross(x_d, x_a);
-
-         glm::vec3 normal = (n1 + n2 + n3 + n4) / 4.f;
-
-         Vertex vertex = {.position = {-alttitudeMap[y][x], 0, 0},
-                          .color = colorMap[y][x],
-                          .normal = normal};
+         Vertex vertex = {.position = glm::vec3(x, -100, y + i * 10),
+                          .color = glm::vec3(1, i / 10.f, x / 1000.f)};
 
          vertices.push_back(vertex);
+         indices.push_back(i * samples + x);
       }
-   }
-
-   for (uint32_t i = 0; i < total_verts; ++i) {
-      uint32_t r = i % n;
-      uint32_t c = r / 2;
-      uint32_t d = (c / xn) % 2;
-      uint32_t s = 1 - 2 * d;
-
-      uint32_t y = s * (i % 2) + (c / xn) * 2 + (i / n) * 2;
-      uint32_t x = d * (xn - 1) + s * (((r + d) / 2) % xn);
-
-      uint32_t index = x + y * xn;
-      indices.push_back(index);
+      indices.push_back(0xFFFFFFFF);
    }
 }
+
 }  // namespace lve

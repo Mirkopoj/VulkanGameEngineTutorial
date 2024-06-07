@@ -71,9 +71,9 @@ void WindRenderSystem::createPipeline(VkRenderPass renderPass,
    pipelineConfig.inputAssemblyInfo.primitiveRestartEnable = VK_TRUE;
 
    pipelineConfig.bindingDescriptions =
-       LveTerrain::Vertex::getBindingDescriptions();
+       LveWind::Vertex::getBindingDescriptions();
    pipelineConfig.attributeDescriptions =
-       LveTerrain::Vertex::getAttributeDescriptions();
+       LveWind::Vertex::getAttributeDescriptions();
    pipelineConfig.renderPass = renderPass;
    pipelineConfig.pipelineLayout = pipelineLayout;
    lvePipeline = std::make_unique<LvePipeline>(

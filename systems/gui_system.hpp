@@ -28,6 +28,7 @@ class ImGuiGui {
 
    void new_frame();
    void update(lve::TerrainMovementController &, bool &, std::string &,
-               const std::set<std::string> &, int &, bool &, size_t &);
+               const std::set<std::string> &, int &, bool &, size_t &,
+               glm::vec3);
    void render(VkCommandBuffer command_buffer);
 };

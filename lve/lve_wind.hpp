@@ -18,7 +18,6 @@ class LveWind {
    struct Vertex {
       glm::vec3 position{};
       glm::vec3 color{};
-      glm::vec3 normal{};
 
       static std::vector<VkVertexInputBindingDescription>
       getBindingDescriptions();
@@ -30,9 +29,7 @@ class LveWind {
       std::vector<Vertex> vertices{};
       std::vector<uint32_t> indices{};
 
-      void generateMesh(
-          const std::vector<std::vector<glm::float32>> alttitudeMap,
-          const std::vector<std::vector<glm::vec3>> colorMap);
+      void generateMesh();
    };
 
    LveWind(LveDevice &device, const LveWind::Builder &builder);
@@ -41,10 +38,7 @@ class LveWind {
    LveWind(const LveWind &) = delete;
    LveWind &operator=(const LveWind &) = delete;
 
-   static std::unique_ptr<LveWind> createModelFromMesh(
-       LveDevice &device,
-       const std::vector<std::vector<glm::float32>> alttitudeMap,
-       const std::vector<std::vector<glm::vec3>> colorMap);
+   static std::unique_ptr<LveWind> createModelFromMesh(LveDevice &device);
 
    void bind(VkCommandBuffer commandBuffer);
    void draw(VkCommandBuffer commandBuffer);

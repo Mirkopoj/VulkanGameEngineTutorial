@@ -7,6 +7,7 @@
 
 #include "../lve/lve_camera.hpp"
 #include "../lve/lve_terrain.hpp"
+#include "../lve/lve_wind.hpp"
 
 // libs
 #define GLM_FORCE_RADIANS
@@ -32,7 +33,7 @@ struct FrameInfo {
    LveCamera &camera;
    VkDescriptorSet globalDescriptorSet;
    std::unique_ptr<LveTerrain> &terrain;
-   std::unique_ptr<LveTerrain> &wind;
+   std::unique_ptr<LveWind> &wind;
 };
 
 }  // namespace lve
