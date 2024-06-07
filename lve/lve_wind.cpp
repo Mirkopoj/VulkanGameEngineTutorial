@@ -27,9 +27,11 @@ LveWind::LveWind(LveDevice &device, const LveWind::Builder &builder)
 LveWind::~LveWind() {
 }
 
-std::unique_ptr<LveWind> LveWind::createModelFromMesh(LveDevice &device) {
+std::unique_ptr<LveWind> LveWind::createModelFromMesh(LveDevice &device,
+                                                      uint32_t xn,
+                                                      uint32_t yn) {
    Builder builder{};
-   builder.generateMesh();
+   builder.generateMesh(xn, yn);
 
    return std::make_unique<LveWind>(device, builder);
 }
@@ -132,17 +134,20 @@ LveWind::Vertex::getAttributeDescriptions() {
    return attributeDescriptions;
 }
 
-void LveWind::Builder::generateMesh() {
+void LveWind::Builder::generateMesh(uint32_t xn, uint32_t yn) {
    vertices.clear();
    indices.clear();
 
-   const int samples = 1000;
-   for (int i = 0; i < 10; ++i) {
+   const float spacing = 10.f;
+   const float samples = xn;
+   const float line_count = yn / spacing;
+   for (int i = 0; i < line_count; ++i) {
       for (int x = 0; x < samples; ++x) {
          float y = glm::sin(x / 100.f) * 100;
 
-         Vertex vertex = {.position = glm::vec3(x, -100, y + i * 10),
-                          .color = glm::vec3(1, i / 10.f, x / 1000.f)};
+         Vertex vertex = {
+             .position = glm::vec3(x, -100, y + i * spacing),
+             .color = glm::vec3(1, i / line_count, x / samples)};
 
          vertices.push_back(vertex);
          indices.push_back(i * samples + x);

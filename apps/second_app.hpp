@@ -60,7 +60,7 @@ class SecondApp {
    std::string lastTryedPath = "";
 
    std::unique_ptr<LveTerrain> terrain = nullptr;
-   std::unique_ptr<LveWind> wind = LveWind::createModelFromMesh(lveDevice);
+   std::unique_ptr<LveWind> wind = nullptr;
 
    uint32_t xn = 0;
    uint32_t yn = 0;

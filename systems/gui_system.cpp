@@ -56,7 +56,7 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
                       bool &caminata, std::string &path,
                       const std::set<std::string> &recent, int &curr,
                       bool &loadingState, size_t &pipeline,
-                      glm::vec3 coord) {
+                      glm::vec3 coord, bool &viento) {
    ImGui::Begin("Sensibilidad");
    ImGui::SliderFloat("Velocidad minima", &cameraControler.moveSpeedMin,
                       0.1f, cameraControler.moveSpeedMax);
@@ -80,6 +80,7 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
    ImGui::RadioButton("Normal", &pipeline_i, 0);
    ImGui::SameLine();
    ImGui::RadioButton("WireFrame", &pipeline_i, 1);
+	ImGui::Checkbox("Ver viento", &viento);
    ImGui::End();
    pipeline = pipeline_i;
 

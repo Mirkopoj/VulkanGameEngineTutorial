@@ -102,6 +102,7 @@ void SecondApp::run() {
 
    auto currentTime = std::chrono::high_resolution_clock::now();
    bool caminata = false;
+   bool viento = false;
 
    std::string new_path = path;
    size_t pipeline = 0;
@@ -143,12 +144,12 @@ void SecondApp::run() {
          ubo.projection = camera.getProjection();
          ubo.view = camera.getView();
          ubo.cols = xn;
-         ubo.time = currentTime.time_since_epoch().count()/10000000L;
+         ubo.time = currentTime.time_since_epoch().count() / 10000000L;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
          myimgui.update(cameraController, caminata, new_path, maps, curr,
                         loadingTerrain, pipeline,
-                        viewerObject.transform.translation);
+                        viewerObject.transform.translation, viento);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -158,7 +159,9 @@ void SecondApp::run() {
                 frameInfo,
                 static_cast<TerrainRenderSystem::PipeLineType>(pipeline));
          }
-         windRenderSystem.renderWind(frameInfo);
+         if (wind && viento) {
+            windRenderSystem.renderWind(frameInfo);
+         }
          myimgui.render(commandBuffer);
 
          lveRenderer.endSwapChainRenderPass(commandBuffer);
@@ -181,6 +184,7 @@ void SecondApp::run() {
             terrain =
                 std::make_unique<LveTerrain>(lveDevice, newMap.builder);
             fixViewer(viewerObject, cameraHeight);
+            wind = LveWind::createModelFromMesh(lveDevice, xn, yn);
          } catch (...) {
          }
       }

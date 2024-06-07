@@ -26,7 +26,6 @@ void main() {
 
    gl_Position = ubo.projection * ubo.view * positionWorld;
 
-	float t = mod(ubo.time + gl_VertexIndex, 100) / 100.f;
-	vec3 anim_col = vec3(1, 1, 1) * t;
-   fragColor = color*anim_col;
+	float t = mod(ubo.time - gl_VertexIndex, 100) / 400.f;
+   fragColor = color * (1.f - t);
 }
