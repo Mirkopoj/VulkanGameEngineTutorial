@@ -24,6 +24,7 @@ struct GlobalUbo {
                               .02f};
    glm::vec3 lightPosition{1.5f, -3.5f, -2.5f};
    glm::uint cols{5};
+   glm::uint time{0};
 };
 
 struct FrameInfo {

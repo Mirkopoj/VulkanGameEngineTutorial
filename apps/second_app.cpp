@@ -143,6 +143,7 @@ void SecondApp::run() {
          ubo.projection = camera.getProjection();
          ubo.view = camera.getView();
          ubo.cols = xn;
+         ubo.time = currentTime.time_since_epoch().count()/10000000L;
          uboBuffers[frameIndex]->writeToBuffer(&ubo);
          uboBuffers[frameIndex]->flush();
          myimgui.update(cameraController, caminata, new_path, maps, curr,

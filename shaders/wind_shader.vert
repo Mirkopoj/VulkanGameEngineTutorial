@@ -11,6 +11,7 @@ layout(set = 0, binding = 0) uniform GloablUbo {
    vec4 ambientLightColor;
 	vec3 lightPosition;
 	uint cols;
+	uint time;
 }
 ubo;
 
@@ -25,5 +26,7 @@ void main() {
 
    gl_Position = ubo.projection * ubo.view * positionWorld;
 
-   fragColor = color;
+	float t = mod(ubo.time + gl_VertexIndex, 100) / 100.f;
+	vec3 anim_col = vec3(1, 1, 1) * t;
+   fragColor = color*anim_col;
 }
