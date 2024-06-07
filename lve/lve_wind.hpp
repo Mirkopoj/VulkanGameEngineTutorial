@@ -60,6 +60,8 @@ class LveWind {
    bool hasIndexBuffer = false;
    std::unique_ptr<LveBuffer> indexBuffer;
    uint32_t indexCount;
+
+	static glm::vec3 color(float amount);
 };
 
 }  // namespace lve

@@ -213,18 +213,18 @@ void LveWind::Builder::generateMesh(
 
          glm::vec2 pos = glm::vec2(x_reg, y_reg);
 
-         float d00 = glm::dot(p00 - pos, p00 - pos);
-         float d01 = glm::dot(p01 - pos, p01 - pos);
-         float d10 = glm::dot(p10 - pos, p10 - pos);
-         float d11 = glm::dot(p11 - pos, p11 - pos);
+         float d00 = glm::length(p00 - pos);
+         float d01 = glm::length(p01 - pos);
+         float d10 = glm::length(p10 - pos);
+         float d11 = glm::length(p11 - pos);
 
          glm::vec2 moveDir = glm::clamp(1.f - d00, 0.f, 1.f) * v00 +
                              glm::clamp(1.f - d01, 0.f, 1.f) * v01 +
                              glm::clamp(1.f - d10, 0.f, 1.f) * v10 +
                              glm::clamp(1.f - d11, 0.f, 1.f) * v11;
 
-         float amount = glm::dot(moveDir, moveDir);
-         vertex.color = glm::vec3(amount, 0.2, 0.2);
+         float amount = glm::length(moveDir);
+         vertex.color = color(amount / 150.f);
 
          Vertex next_vertex = vertex;
          const float moveSpeed = 0.1;
@@ -237,26 +237,6 @@ void LveWind::Builder::generateMesh(
              next_vertex.position.z > yn - 1 ||
              next_vertex.position.z < 0) {
             adentro = false;
-				/*
-            if (next_vertex.position.x > xn - 1) {
-               float x_min = xn - 1 - vertex.position.x;
-               moveDir *= x_min / moveDir.x;
-            }
-            if (next_vertex.position.x < 0) {
-               float x_min = vertex.position.x;
-               moveDir *= x_min / moveDir.x;
-            }
-            if (next_vertex.position.z > yn - 1) {
-               float y_min = yn - 1 - vertex.position.z;
-               moveDir *= y_min / moveDir.y;
-            }
-            if (next_vertex.position.z < 0) {
-               float y_min = vertex.position.z;
-               moveDir *= y_min / moveDir.y;
-            }
-            next_vertex.position = vertex.position;
-            next_vertex.position.x = moveDir.x;
-            next_vertex.position.z = moveDir.y;*/
          } else {
             line.push_back(next_vertex);
          }
@@ -271,6 +251,20 @@ void LveWind::Builder::generateMesh(
       }
       indices.push_back(0xFFFFFFFF);
    }
+}
+
+glm::vec3 LveWind::color(float amount) {
+   glm::vec3 ret;
+   if (amount <= 0.5f) {
+      amount *= 2.0f;
+      ret.r = (unsigned int)(255 * (1.0f - amount) + 0.5f);
+      ret.g = (unsigned int)(255 * (amount) + 0.5f);
+   } else {
+      amount = amount * 2.0f - 1.0f;
+      ret.g = (unsigned int)(255 * (1.0f - amount) + 0.5f);
+      ret.b = (unsigned int)(255 * (amount) + 0.5f);
+   }
+   return ret / 255.f;
 }
 
 }  // namespace lve
