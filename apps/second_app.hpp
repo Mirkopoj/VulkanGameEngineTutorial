@@ -34,9 +34,9 @@ class SecondApp {
    struct NewMap {
       uint32_t yn;
       uint32_t xn;
-      std::vector<std::vector<glm::float32>> altitudeMap;
-      LveTerrain::Builder builder;
-      std::vector<std::vector<glm::vec2>> wind_speed;
+      std::vector<std::vector<glm::float32>> altittudeMap;
+      LveTerrain::Builder terrain_builder;
+      LveWind::Builder wind_builder;
    };
 
   private:

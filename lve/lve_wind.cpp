@@ -149,11 +149,11 @@ void LveWind::Builder::generateMesh(
    const uint32_t spacing = 20;
 
    std::vector<std::vector<Vertex>> lines;
-   for (size_t y = 0; y < yn; y+=spacing) {
-      for (size_t x = 0; x < xn; x+=spacing) {
+   for (size_t y = 0; y < yn; y += spacing) {
+      for (size_t x = 0; x < xn; x += spacing) {
          std::vector<Vertex> interno;
          Vertex vertex = {.position = glm::vec3(x, 0, y),
-                                    .color = glm::vec3(0)};
+                          .color = glm::vec3(0)};
          interno.push_back(vertex);
          lines.push_back(interno);
       }
@@ -213,7 +213,7 @@ void LveWind::Builder::generateMesh(
          vertex.color = color(amount / 150.f);
 
          Vertex next_vertex = vertex;
-         const float moveSpeed = 0.1;
+         const float moveSpeed = 0.05;
          moveDir *= moveSpeed;
          next_vertex.position.x += moveDir.x;
          next_vertex.position.z += moveDir.y;
@@ -243,14 +243,14 @@ glm::vec3 LveWind::color(float amount) {
    glm::vec3 ret;
    if (amount <= 0.5f) {
       amount *= 2.0f;
-      ret.r = (unsigned int)(255 * (1.0f - amount) + 0.5f);
-      ret.g = (unsigned int)(255 * (amount) + 0.5f);
+      ret.r = 1.0f - amount;
+      ret.g = amount;
    } else {
       amount = amount * 2.0f - 1.0f;
-      ret.g = (unsigned int)(255 * (1.0f - amount) + 0.5f);
-      ret.b = (unsigned int)(255 * (amount) + 0.5f);
+      ret.g = 1.0f - amount;
+      ret.b = amount;
    }
-   return ret / 255.f;
+   return ret;
 }
 
 }  // namespace lve

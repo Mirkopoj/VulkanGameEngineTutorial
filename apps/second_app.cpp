@@ -178,14 +178,14 @@ void SecondApp::run() {
          loadingTerrain = false;
          try {
             NewMap newMap = loadingState.get();
-            altitudeMap = newMap.altitudeMap;
+            altitudeMap = newMap.altittudeMap;
             xn = newMap.xn;
             yn = newMap.yn;
-            terrain =
-                std::make_unique<LveTerrain>(lveDevice, newMap.builder);
+            terrain = std::make_unique<LveTerrain>(lveDevice,
+                                                   newMap.terrain_builder);
             fixViewer(viewerObject, cameraHeight);
-            wind = LveWind::createModelFromMesh(lveDevice, altitudeMap,
-                                                newMap.wind_speed);
+            wind =
+                std::make_unique<LveWind>(lveDevice, newMap.wind_builder);
          } catch (...) {
          }
       }
@@ -200,60 +200,73 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
 
    newMap.yn = std::stoi(config.value("ROWS"));
    newMap.xn = std::stoi(config.value("COLS"));
-   Lexer::Ascf altitudeAsc = Lexer::loadf(
-       (config.get_path() + config.value("ELEV_MAP")).c_str());
-   newMap.altitudeMap = altitudeAsc.body;
-   glm::float32 min = NAN;
-   for (std::vector<glm::float32>& row : newMap.altitudeMap) {
-      for (glm::float32& cell : row) {
-         if (cell == altitudeAsc.NODATA_value) {
-            cell = 0;
+   auto altittude_join =
+       std::async(std::launch::async, [&config, &newMap] {
+          Lexer::Ascf altitudeAsc = Lexer::loadf(
+              (config.get_path() + config.value("ELEV_MAP")).c_str());
+          newMap.altittudeMap = altitudeAsc.body;
+          glm::float32 min = NAN;
+          for (std::vector<glm::float32>& row : newMap.altittudeMap) {
+             for (glm::float32& cell : row) {
+                if (cell == altitudeAsc.NODATA_value) {
+                   cell = 0;
+                }
+                glm::float32 alt{cell / altitudeAsc.cellsize};
+                cell = alt;
+                min = min != NAN && min < cell ? min : cell;
+             }
+          }
+          for (std::vector<glm::float32>& row : newMap.altittudeMap) {
+             for (glm::float32& cell : row) {
+                cell -= min;
+             }
+          }
+       });
+   auto terrain_join = std::async(std::launch::async, [&config, &newMap,
+                                                       &altittude_join] {
+      Lexer::Asci vegetationAsc = Lexer::loadi(
+          (config.get_path() + config.value("VEGETATION_MAP")).c_str());
+      std::vector<std::vector<glm::int32>> vegetationMap =
+          vegetationAsc.body;
+      std::vector<std::vector<glm::vec3>> colorMap;
+      Lexer::PaletDB paletDb{
+          (config.get_path() + config.value("PALETA")).c_str()};
+      for (std::vector<glm::int32> row : vegetationMap) {
+         std::vector<glm::vec3> aux;
+         for (glm::int32 cell : row) {
+            Lexer::PaletDB::Color color = paletDb.color(cell);
+            aux.push_back(color.color);
          }
-         glm::float32 alt{cell / altitudeAsc.cellsize};
-         cell = alt;
-         min = min != NAN && min < cell ? min : cell;
+         colorMap.push_back(aux);
       }
-   }
-   for (std::vector<glm::float32>& row : newMap.altitudeMap) {
-      for (glm::float32& cell : row) {
-         cell -= min;
-      }
-   }
-   Lexer::Asci vegetationAsc = Lexer::loadi(
-       (config.get_path() + config.value("VEGETATION_MAP")).c_str());
-   std::vector<std::vector<glm::int32>> vegetationMap = vegetationAsc.body;
-   std::vector<std::vector<glm::vec3>> colorMap;
-   Lexer::PaletDB paletDb{
-       (config.get_path() + config.value("PALETA")).c_str()};
-   for (std::vector<glm::int32> row : vegetationMap) {
-      std::vector<glm::vec3> aux;
-      for (glm::int32 cell : row) {
-         Lexer::PaletDB::Color color = paletDb.color(cell);
-         aux.push_back(color.color);
-      }
-      colorMap.push_back(aux);
-   }
+      altittude_join.wait();
+      newMap.terrain_builder.generateMesh(newMap.altittudeMap, colorMap);
+   });
 
-   newMap.builder.generateMesh(newMap.altitudeMap, colorMap);
+   auto wind_join = std::async(std::launch::async, [&config, &newMap,
+                                                    &altittude_join] {
+      std::vector<std::vector<glm::int32>> dirViento =
+          Lexer::loadi(
+              (config.get_path() + config.value("WIND_MAP")).c_str())
+              .body;
+      std::vector<std::vector<glm::float32>> velViento =
+          Lexer::loadf(
+              (config.get_path() + config.value("INT_WIND")).c_str())
+              .body;
 
-   std::vector<std::vector<glm::int32>> dirViento =
-       Lexer::loadi((config.get_path() + config.value("WIND_MAP")).c_str())
-           .body;
-   std::vector<std::vector<glm::float32>> velViento =
-       Lexer::loadf((config.get_path() + config.value("INT_WIND")).c_str())
-           .body;
-
-   std::vector<std::vector<glm::vec2>> windSpeed;
-   for (size_t y = 0; y < dirViento.size(); ++y) {
-      std::vector<glm::vec2> row;
-      for (size_t x = 0; x < dirViento[0].size(); ++x) {
-         float angulo = dirViento[y][x] * glm::two_pi<float>() / 360.f;
-         row.push_back(glm::vec2(glm::cos(angulo), glm::sin(angulo)) *
-                       velViento[y][x]);
+      std::vector<std::vector<glm::vec2>> windSpeed;
+      for (size_t y = 0; y < dirViento.size(); ++y) {
+         std::vector<glm::vec2> row;
+         for (size_t x = 0; x < dirViento[0].size(); ++x) {
+            float angulo = dirViento[y][x] * glm::two_pi<float>() / 360.f;
+            row.push_back(glm::vec2(glm::cos(angulo), glm::sin(angulo)) *
+                          velViento[y][x]);
+         }
+         windSpeed.push_back(row);
       }
-      windSpeed.push_back(row);
-   }
-   newMap.wind_speed = windSpeed;
+      altittude_join.wait();
+      newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed);
+   });
 
    path = new_path;
    std::pair<std::set<std::string>::iterator, bool> insert_result =
@@ -261,6 +274,10 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
    if (insert_result.second) {
       curr = std::distance(maps.begin(), insert_result.first);
    }
+
+   terrain_join.wait();
+   wind_join.wait();
+
    return newMap;
 }
 
