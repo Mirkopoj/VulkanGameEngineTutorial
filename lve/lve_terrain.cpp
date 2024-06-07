@@ -30,8 +30,8 @@ LveTerrain::~LveTerrain() {
 
 std::unique_ptr<LveTerrain> LveTerrain::createModelFromMesh(
     LveDevice &device,
-    const std::vector<std::vector<glm::float32>> alttitudeMap,
-    const std::vector<std::vector<glm::vec3>> colorMap) {
+    const std::vector<std::vector<glm::float32>> &alttitudeMap,
+    const std::vector<std::vector<glm::vec3>> &colorMap) {
    Builder builder{};
    builder.generateMesh(alttitudeMap, colorMap);
 
@@ -139,8 +139,8 @@ LveTerrain::Vertex::getAttributeDescriptions() {
 }
 
 void LveTerrain::Builder::generateMesh(
-    const std::vector<std::vector<glm::float32>> alttitudeMap,
-    const std::vector<std::vector<glm::vec3>> colorMap) {
+    const std::vector<std::vector<glm::float32>> &alttitudeMap,
+    const std::vector<std::vector<glm::vec3>> &colorMap) {
    vertices.clear();
    indices.clear();
 

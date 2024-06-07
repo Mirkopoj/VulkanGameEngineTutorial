@@ -184,7 +184,8 @@ void SecondApp::run() {
             terrain =
                 std::make_unique<LveTerrain>(lveDevice, newMap.builder);
             fixViewer(viewerObject, cameraHeight);
-            wind = LveWind::createModelFromMesh(lveDevice, xn, yn);
+            wind = LveWind::createModelFromMesh(lveDevice, altitudeMap,
+                                                newMap.wind_speed);
          } catch (...) {
          }
       }
@@ -234,6 +235,25 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
    }
 
    newMap.builder.generateMesh(newMap.altitudeMap, colorMap);
+
+   std::vector<std::vector<glm::int32>> dirViento =
+       Lexer::loadi((config.get_path() + config.value("WIND_MAP")).c_str())
+           .body;
+   std::vector<std::vector<glm::float32>> velViento =
+       Lexer::loadf((config.get_path() + config.value("INT_WIND")).c_str())
+           .body;
+
+   std::vector<std::vector<glm::vec2>> windSpeed;
+   for (size_t y = 0; y < dirViento.size(); ++y) {
+      std::vector<glm::vec2> row;
+      for (size_t x = 0; x < dirViento[0].size(); ++x) {
+         float angulo = dirViento[y][x] * glm::two_pi<float>() / 360.f;
+         row.push_back(glm::vec2(glm::cos(angulo), glm::sin(angulo)) *
+                       velViento[y][x]);
+      }
+      windSpeed.push_back(row);
+   }
+   newMap.wind_speed = windSpeed;
 
    path = new_path;
    std::pair<std::set<std::string>::iterator, bool> insert_result =

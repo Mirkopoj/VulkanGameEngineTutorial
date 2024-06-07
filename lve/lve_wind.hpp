@@ -29,7 +29,9 @@ class LveWind {
       std::vector<Vertex> vertices{};
       std::vector<uint32_t> indices{};
 
-      void generateMesh(uint32_t xn, uint32_t yn);
+      void generateMesh(
+          const std::vector<std::vector<glm::float32>> &alttitudeMap,
+          const std::vector<std::vector<glm::vec2>> &wind_speed);
    };
 
    LveWind(LveDevice &device, const LveWind::Builder &builder);
@@ -38,9 +40,10 @@ class LveWind {
    LveWind(const LveWind &) = delete;
    LveWind &operator=(const LveWind &) = delete;
 
-   static std::unique_ptr<LveWind> createModelFromMesh(LveDevice &device,
-                                                       uint32_t xn,
-                                                       uint32_t yn);
+   static std::unique_ptr<LveWind> createModelFromMesh(
+       LveDevice &device,
+       const std::vector<std::vector<glm::float32>> &alttitudeMap,
+       const std::vector<std::vector<glm::vec2>> &wind_speed);
 
    void bind(VkCommandBuffer commandBuffer);
    void draw(VkCommandBuffer commandBuffer);

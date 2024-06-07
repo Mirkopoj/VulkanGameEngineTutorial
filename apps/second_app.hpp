@@ -36,6 +36,7 @@ class SecondApp {
       uint32_t xn;
       std::vector<std::vector<glm::float32>> altitudeMap;
       LveTerrain::Builder builder;
+      std::vector<std::vector<glm::vec2>> wind_speed;
    };
 
   private:

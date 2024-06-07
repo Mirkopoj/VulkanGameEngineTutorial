@@ -31,8 +31,8 @@ class LveTerrain {
       std::vector<uint32_t> indices{};
 
       void generateMesh(
-          const std::vector<std::vector<glm::float32>> alttitudeMap,
-          const std::vector<std::vector<glm::vec3>> colorMap);
+          const std::vector<std::vector<glm::float32>> &alttitudeMap,
+          const std::vector<std::vector<glm::vec3>> &colorMap);
    };
 
    LveTerrain(LveDevice &device, const LveTerrain::Builder &builder);
@@ -43,8 +43,8 @@ class LveTerrain {
 
    static std::unique_ptr<LveTerrain> createModelFromMesh(
        LveDevice &device,
-       const std::vector<std::vector<glm::float32>> alttitudeMap,
-       const std::vector<std::vector<glm::vec3>> colorMap);
+       const std::vector<std::vector<glm::float32>> &alttitudeMap,
+       const std::vector<std::vector<glm::vec3>> &colorMap);
 
    void bind(VkCommandBuffer commandBuffer);
    void draw(VkCommandBuffer commandBuffer);
