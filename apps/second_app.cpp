@@ -224,13 +224,19 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
        });
    auto terrain_join = std::async(std::launch::async, [&config, &newMap,
                                                        &altittude_join] {
-      Lexer::Asci vegetationAsc = Lexer::loadi(
-          (config.get_path() + config.value("VEGETATION_MAP")).c_str());
-      std::vector<std::vector<glm::int32>> vegetationMap =
-          vegetationAsc.body;
+      auto vege_join = std::async(std::launch::async, [&config] {
+         Lexer::Asci vegetationAsc = Lexer::loadi(
+             (config.get_path() + config.value("VEGETATION_MAP")).c_str());
+         return vegetationAsc.body;
+      });
       std::vector<std::vector<glm::vec3>> colorMap;
-      Lexer::PaletDB paletDb{
-          (config.get_path() + config.value("PALETA")).c_str()};
+      auto paleta_join = std::async(std::launch::async, [&config] {
+         Lexer::PaletDB paletDb{
+             (config.get_path() + config.value("PALETA")).c_str()};
+         return paletDb;
+      });
+      std::vector<std::vector<glm::int32>> vegetationMap = vege_join.get();
+      Lexer::PaletDB paletDb = paleta_join.get();
       for (std::vector<glm::int32> row : vegetationMap) {
          std::vector<glm::vec3> aux;
          for (glm::int32 cell : row) {
@@ -245,15 +251,19 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
 
    auto wind_join = std::async(std::launch::async, [&config, &newMap,
                                                     &altittude_join] {
-      std::vector<std::vector<glm::int32>> dirViento =
-          Lexer::loadi(
-              (config.get_path() + config.value("WIND_MAP")).c_str())
-              .body;
-      std::vector<std::vector<glm::float32>> velViento =
-          Lexer::loadf(
-              (config.get_path() + config.value("INT_WIND")).c_str())
-              .body;
+      auto dir_join = std::async(std::launch::async, [&config] {
+         return Lexer::loadi(
+                    (config.get_path() + config.value("WIND_MAP")).c_str())
+             .body;
+      });
+      auto vel_join = std::async(std::launch::async, [&config] {
+         return Lexer::loadf(
+                    (config.get_path() + config.value("INT_WIND")).c_str())
+             .body;
+      });
 
+      std::vector<std::vector<glm::int32>> dirViento = dir_join.get();
+      std::vector<std::vector<glm::float32>> velViento = vel_join.get();
       std::vector<std::vector<glm::vec2>> windSpeed;
       for (size_t y = 0; y < dirViento.size(); ++y) {
          std::vector<glm::vec2> row;
