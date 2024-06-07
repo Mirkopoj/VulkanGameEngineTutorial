@@ -146,33 +146,19 @@ void LveWind::Builder::generateMesh(
    const uint32_t xn = alttitudeMap[0].size();
    const uint32_t yn = alttitudeMap.size();
 
+   const uint32_t spacing = 20;
+
    std::vector<std::vector<Vertex>> lines;
-   for (size_t i = 0; i < xn; ++i) {
-      std::vector<Vertex> interno_principio;
-      Vertex vertex_principio = {.position = glm::vec3(i, 0, 0),
-                                 .color = glm::vec3(0)};
-      interno_principio.push_back(vertex_principio);
-      lines.push_back(interno_principio);
-      std::vector<Vertex> interno_final;
-      Vertex vertex_final = {.position = glm::vec3(i, 0, yn - 1),
-                             .color = glm::vec3(0)};
-      interno_final.push_back(vertex_final);
-      lines.push_back(interno_final);
-   }
-   for (size_t i = 0; i < yn; ++i) {
-      std::vector<Vertex> interno_principio;
-      Vertex vertex_principio = {.position = glm::vec3(0, 0, i),
-                                 .color = glm::vec3(0)};
-      interno_principio.push_back(vertex_principio);
-      lines.push_back(interno_principio);
-      std::vector<Vertex> interno_final;
-      Vertex vertex_final = {.position = glm::vec3(xn - 1, 0, i),
-                             .color = glm::vec3(0)};
-      interno_final.push_back(vertex_final);
-      lines.push_back(interno_final);
+   for (size_t y = 0; y < yn; y+=spacing) {
+      for (size_t x = 0; x < xn; x+=spacing) {
+         std::vector<Vertex> interno;
+         Vertex vertex = {.position = glm::vec3(x, 0, y),
+                                    .color = glm::vec3(0)};
+         interno.push_back(vertex);
+         lines.push_back(interno);
+      }
    }
 
-   const float spacing = 10.f;
    const size_t max_samples = 10000;
 
    for (std::vector<Vertex> &line : lines) {
