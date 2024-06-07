@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <future>
 #include <glm/common.hpp>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -161,74 +162,84 @@ void LveWind::Builder::generateMesh(
 
    const size_t max_samples = 10000;
 
+   std::vector<std::future<void>> line_joins;
    for (std::vector<Vertex> &line : lines) {
-      bool adentro = true;
-      while (adentro && line.size() < max_samples) {
-         Vertex &vertex = line.back();
+      line_joins.push_back(std::async(std::launch::async, [&line, xn, yn,
+                                                           &alttitudeMap,
+                                                           &wind_speed] {
+         bool adentro = true;
+         while (adentro && line.size() < max_samples) {
+            Vertex &vertex = line.back();
 
-         uint32_t x0 = glm::clamp(xn - (uint32_t)floorf(vertex.position.x),
-                                  (uint32_t)0, xn - 1);
-         uint32_t y0 = glm::clamp((uint32_t)floorf(vertex.position.z),
-                                  (uint32_t)0, yn - 1);
+            uint32_t x0 =
+                glm::clamp(xn - (uint32_t)floorf(vertex.position.x),
+                           (uint32_t)0, xn - 1);
+            uint32_t y0 = glm::clamp((uint32_t)floorf(vertex.position.z),
+                                     (uint32_t)0, yn - 1);
 
-         uint32_t x1 = glm::clamp(xn - (uint32_t)ceilf(vertex.position.x),
-                                  (uint32_t)0, xn - 1);
-         uint32_t y1 = glm::clamp((uint32_t)ceilf(vertex.position.z),
-                                  (uint32_t)0, yn - 1);
+            uint32_t x1 =
+                glm::clamp(xn - (uint32_t)ceilf(vertex.position.x),
+                           (uint32_t)0, xn - 1);
+            uint32_t y1 = glm::clamp((uint32_t)ceilf(vertex.position.z),
+                                     (uint32_t)0, yn - 1);
 
-         float x_reg = glm::fract(vertex.position.x);
-         float y_reg = glm::fract(vertex.position.z);
+            float x_reg = glm::fract(vertex.position.x);
+            float y_reg = glm::fract(vertex.position.z);
 
-         float z00 = alttitudeMap[y0][x0];
-         float z01 = alttitudeMap[y0][x1];
-         float z10 = alttitudeMap[y1][x0];
+            float z00 = alttitudeMap[y0][x0];
+            float z01 = alttitudeMap[y0][x1];
+            float z10 = alttitudeMap[y1][x0];
 
-         float wind_heigth =
-             -2.0 - (z00 + x_reg * (z01 - z00) + y_reg * (z10 - z00));
-         vertex.position.y = wind_heigth;
+            float wind_heigth =
+                -2.0 - (z00 + x_reg * (z01 - z00) + y_reg * (z10 - z00));
+            vertex.position.y = wind_heigth;
 
-         glm::vec2 v00 = wind_speed[y0][x0];
-         glm::vec2 v01 = wind_speed[y0][x1];
-         glm::vec2 v10 = wind_speed[y1][x0];
-         glm::vec2 v11 = wind_speed[y1][x1];
+            glm::vec2 v00 = wind_speed[y0][x0];
+            glm::vec2 v01 = wind_speed[y0][x1];
+            glm::vec2 v10 = wind_speed[y1][x0];
+            glm::vec2 v11 = wind_speed[y1][x1];
 
-         glm::vec2 p00 = glm::vec2(0.f, 0.f);
-         glm::vec2 p01 = glm::vec2(1.f, 0.f);
-         glm::vec2 p10 = glm::vec2(0.f, 1.f);
-         glm::vec2 p11 = glm::vec2(1.f, 1.f);
+            glm::vec2 p00 = glm::vec2(0.f, 0.f);
+            glm::vec2 p01 = glm::vec2(1.f, 0.f);
+            glm::vec2 p10 = glm::vec2(0.f, 1.f);
+            glm::vec2 p11 = glm::vec2(1.f, 1.f);
 
-         glm::vec2 pos = glm::vec2(x_reg, y_reg);
+            glm::vec2 pos = glm::vec2(x_reg, y_reg);
 
-         float d00 = glm::length(p00 - pos);
-         float d01 = glm::length(p01 - pos);
-         float d10 = glm::length(p10 - pos);
-         float d11 = glm::length(p11 - pos);
+            float d00 = glm::length(p00 - pos);
+            float d01 = glm::length(p01 - pos);
+            float d10 = glm::length(p10 - pos);
+            float d11 = glm::length(p11 - pos);
 
-         glm::vec2 moveDir = glm::clamp(1.f - d00, 0.f, 1.f) * v00 +
-                             glm::clamp(1.f - d01, 0.f, 1.f) * v01 +
-                             glm::clamp(1.f - d10, 0.f, 1.f) * v10 +
-                             glm::clamp(1.f - d11, 0.f, 1.f) * v11;
+            glm::vec2 moveDir = glm::clamp(1.f - d00, 0.f, 1.f) * v00 +
+                                glm::clamp(1.f - d01, 0.f, 1.f) * v01 +
+                                glm::clamp(1.f - d10, 0.f, 1.f) * v10 +
+                                glm::clamp(1.f - d11, 0.f, 1.f) * v11;
 
-         float amount = glm::length(moveDir);
-         vertex.color = color(amount / 150.f);
+            float amount = glm::length(moveDir);
+            vertex.color = color(amount / 150.f);
 
-         Vertex next_vertex = vertex;
-         const float moveSpeed = 0.05;
-         moveDir *= moveSpeed;
-         next_vertex.position.x += moveDir.x;
-         next_vertex.position.z += moveDir.y;
+            Vertex next_vertex = vertex;
+            const float moveSpeed = 0.05;
+            moveDir *= moveSpeed;
+            next_vertex.position.x += moveDir.x;
+            next_vertex.position.z += moveDir.y;
 
-         if (next_vertex.position.x > xn - 1 ||
-             next_vertex.position.x < 0 ||
-             next_vertex.position.z > yn - 1 ||
-             next_vertex.position.z < 0) {
-            adentro = false;
-         } else {
-            line.push_back(next_vertex);
+            if (next_vertex.position.x > xn - 1 ||
+                next_vertex.position.x < 0 ||
+                next_vertex.position.z > yn - 1 ||
+                next_vertex.position.z < 0) {
+               adentro = false;
+            } else {
+               line.push_back(next_vertex);
+            }
          }
-      }
+      }));
    }
    size_t index = 0;
+   for (std::future<void> &join : line_joins) {
+      join.wait();
+   }
    for (std::vector<Vertex> line : lines) {
       for (Vertex vertex : line) {
          vertices.push_back(vertex);

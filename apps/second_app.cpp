@@ -16,6 +16,7 @@
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -224,6 +225,7 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
        });
    auto terrain_join = std::async(std::launch::async, [&config, &newMap,
                                                        &altittude_join] {
+      auto beginTime = std::chrono::high_resolution_clock::now();
       auto vege_join = std::async(std::launch::async, [&config] {
          Lexer::Asci vegetationAsc = Lexer::loadi(
              (config.get_path() + config.value("VEGETATION_MAP")).c_str());
@@ -247,10 +249,17 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
       }
       altittude_join.wait();
       newMap.terrain_builder.generateMesh(newMap.altittudeMap, colorMap);
+      auto endTime = std::chrono::high_resolution_clock::now();
+      float time =
+          std::chrono::duration<float, std::chrono::seconds::period>(
+              endTime - beginTime)
+              .count();
+      std::cout << "Terrain time: " << time << "\n";
    });
 
    auto wind_join = std::async(std::launch::async, [&config, &newMap,
                                                     &altittude_join] {
+      auto beginTime = std::chrono::high_resolution_clock::now();
       auto dir_join = std::async(std::launch::async, [&config] {
          return Lexer::loadi(
                     (config.get_path() + config.value("WIND_MAP")).c_str())
@@ -276,6 +285,12 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
       }
       altittude_join.wait();
       newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed);
+      auto endTime = std::chrono::high_resolution_clock::now();
+      float time =
+          std::chrono::duration<float, std::chrono::seconds::period>(
+              endTime - beginTime)
+              .count();
+      std::cout << "Wind time: " << time << "\n";
    });
 
    path = new_path;
