@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "../apps/second_app.hpp"
-
 int main(int argc, char* argv[]) {
    NFD_Init();
 

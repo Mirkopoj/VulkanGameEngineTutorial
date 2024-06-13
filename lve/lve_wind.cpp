@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 
+#include "cppcolormap.hpp"
 #include "lve_buffer.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -166,11 +167,12 @@ void LveWind::Builder::generateMesh(
 
    const size_t max_samples = 10000;
 
+   auto colormap = cppcolormap::colormap("viridis");
    std::vector<std::future<void>> line_joins;
    for (std::vector<Vertex> &line : lines) {
       line_joins.push_back(std::async(
-          std::launch::async,
-          [&line, xn, yn, &alttitudeMap, &wind_speed, min, spread] {
+          std::launch::async, [&line, xn, yn, &alttitudeMap, &wind_speed,
+                               min, spread, &colormap] {
              bool adentro = true;
              while (adentro && line.size() < max_samples) {
                 Vertex &vertex = line.back();
@@ -223,7 +225,26 @@ void LveWind::Builder::generateMesh(
                                     glm::clamp(1.f - d11, 0.f, 1.f) * v11;
 
                 float amount = glm::length(moveDir);
-                vertex.color = color((amount - min) / spread);
+                float norm_amount = ((amount - min) / spread);
+                size_t last = colormap.shape()[0] - 1;
+                float color_index = last * norm_amount;
+                size_t floor = floorf(color_index);
+                if (floor == last) {
+                   vertex.color =
+                       glm::vec3{colormap(last, 0), colormap(last, 1),
+                                 colormap(last, 2)};
+                } else {
+                   size_t ceil = ceilf(color_index);
+                   float frac = glm::fract(color_index);
+                   auto floor_color =
+                       glm::vec3{colormap(floor, 0), colormap(floor, 1),
+                                 colormap(floor, 2)};
+                   auto ceil_color =
+                       glm::vec3{colormap(ceil, 0), colormap(ceil, 1),
+                                 colormap(ceil, 2)};
+                   vertex.color =
+                       ceil_color * frac + floor_color * (1.f - frac);
+                }
 
                 Vertex next_vertex = vertex;
                 const float moveSpeed = 0.01;
@@ -254,22 +275,6 @@ void LveWind::Builder::generateMesh(
       }
       indices.push_back(0xFFFFFFFF);
    }
-}
-
-glm::vec3 LveWind::color(float amount) {
-   glm::vec3 ret;
-   if (amount <= 0.5f) {
-      amount *= 2.0f;
-      ret.r = 0.f;
-      ret.g = amount;
-      ret.b = 1.0f - amount;
-   } else {
-      amount = amount * 2.0f - 1.0f;
-      ret.r = amount;
-      ret.g = 1.0f - amount;
-      ret.b = 0.f;
-   }
-   return ret;
 }
 
 }  // namespace lve
