@@ -35,9 +35,9 @@ std::unique_ptr<LveWind> LveWind::createModelFromMesh(
     LveDevice &device,
     const std::vector<std::vector<glm::float32>> &alttitudeMap,
     const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
-    float max) {
+    float max, const char *paleta) {
    Builder builder{};
-   builder.generateMesh(alttitudeMap, wind_speed, min, max);
+   builder.generateMesh(alttitudeMap, wind_speed, min, max, paleta);
 
    return std::make_unique<LveWind>(device, builder);
 }
@@ -143,7 +143,7 @@ LveWind::Vertex::getAttributeDescriptions() {
 void LveWind::Builder::generateMesh(
     const std::vector<std::vector<glm::float32>> &alttitudeMap,
     const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
-    float max) {
+    float max, const char *paleta) {
    vertices.clear();
    indices.clear();
 
@@ -167,7 +167,7 @@ void LveWind::Builder::generateMesh(
 
    const size_t max_samples = 10000;
 
-   auto colormap = cppcolormap::colormap("viridis");
+   auto colormap = cppcolormap::colormap(paleta);
    std::vector<std::future<void>> line_joins;
    for (std::vector<Vertex> &line : lines) {
       line_joins.push_back(std::async(

@@ -108,6 +108,7 @@ void SecondApp::run() {
 
    std::string new_path = path;
    size_t pipeline = 0;
+   int paleta_elegida = paleta_viento;
 
    while (!lveWindow.shouldClose()) {
       glfwPollEvents();
@@ -151,7 +152,8 @@ void SecondApp::run() {
          uboBuffers[frameIndex]->flush();
          myimgui.update(cameraController, caminata, new_path, maps, curr,
                         loadingTerrain, pipeline,
-                        viewerObject.transform.translation, viento);
+                        viewerObject.transform.translation, viento,
+                        paleta_elegida, paletas_s);
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -171,6 +173,10 @@ void SecondApp::run() {
       }
 
       if (new_path != lastTryedPath && !loadingTerrain) {
+         asyncLoadGameObjects(new_path.c_str());
+      }
+      if (paleta_viento != paleta_elegida && !loadingTerrain) {
+         paleta_viento = paleta_elegida;
          asyncLoadGameObjects(new_path.c_str());
       }
 
@@ -196,7 +202,8 @@ void SecondApp::run() {
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-SecondApp::NewMap SecondApp::loadGameObjects(const std::filesystem::path & new_path) {
+SecondApp::NewMap SecondApp::loadGameObjects(
+    const std::filesystem::path& new_path) {
    Lexer::Config config(new_path);
    NewMap newMap;
 
@@ -259,7 +266,8 @@ SecondApp::NewMap SecondApp::loadGameObjects(const std::filesystem::path & new_p
    });
 
    auto wind_join = std::async(std::launch::async, [&config, &newMap,
-                                                    &altittude_join] {
+                                                    &altittude_join,
+                                                    this] {
       auto beginTime = std::chrono::high_resolution_clock::now();
       auto dir_join = std::async(std::launch::async, [&config] {
          return Lexer::loadi(
@@ -290,7 +298,7 @@ SecondApp::NewMap SecondApp::loadGameObjects(const std::filesystem::path & new_p
       }
       altittude_join.wait();
       newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed, min,
-                                       max);
+                                       max, paletas[paleta_viento]);
       auto endTime = std::chrono::high_resolution_clock::now();
       float time =
           std::chrono::duration<float, std::chrono::seconds::period>(
@@ -312,7 +320,8 @@ SecondApp::NewMap SecondApp::loadGameObjects(const std::filesystem::path & new_p
    return newMap;
 }
 
-void SecondApp::asyncLoadGameObjects(const std::filesystem::path & new_path) {
+void SecondApp::asyncLoadGameObjects(
+    const std::filesystem::path& new_path) {
    lastTryedPath = new_path;
    if (std::filesystem::exists(new_path / "config.txt")) {
       loadingState = std::async(

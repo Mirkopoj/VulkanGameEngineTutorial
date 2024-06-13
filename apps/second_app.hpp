@@ -74,6 +74,32 @@ class SecondApp {
    std::future<NewMap> loadingState;
    bool loadingTerrain = false;
 
+   int paleta_viento = 10;
+   const char *paletas[18] = {
+       "spring",  "summer",  "autumn",  "winter", "bone",
+       "cool",    "hot",     "copper",  "hsv",    "nipy_spectral",
+       "jet",     "terrain", "seismic", "afmhot", "magma",
+       "inferno", "plasma",  "viridis"};
+   const char *paletas_s =
+       "spring\0"
+       "summer\0"
+       "autumn\0"
+       "winter\0"
+       "bone\0"
+       "cool\0"
+       "hot\0"
+       "copper\0"
+       "hsv\0"
+       "nipy_spectral\0"
+       "jet\0"
+       "terrain\0"
+       "seismic\0"
+       "afmhot\0"
+       "magma\0"
+       "inferno\0"
+       "plasma\0"
+       "viridis\0";
+
    NewMap loadGameObjects(const std::filesystem::path &);
 
    void fixViewer(LveGameObject &, float);

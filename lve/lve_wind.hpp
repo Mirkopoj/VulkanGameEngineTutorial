@@ -32,7 +32,7 @@ class LveWind {
       void generateMesh(
           const std::vector<std::vector<glm::float32>> &alttitudeMap,
           const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
-          float max);
+          float max, const char *paleta);
    };
 
    LveWind(LveDevice &device, const LveWind::Builder &builder);
@@ -45,7 +45,7 @@ class LveWind {
        LveDevice &device,
        const std::vector<std::vector<glm::float32>> &alttitudeMap,
        const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
-       float max);
+       float max, const char *paleta);
 
    void bind(VkCommandBuffer commandBuffer);
    void draw(VkCommandBuffer commandBuffer);
