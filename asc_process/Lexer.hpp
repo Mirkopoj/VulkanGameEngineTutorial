@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <glm/fwd.hpp>
 #include <map>
 #include <string>
@@ -15,13 +16,13 @@ namespace Lexer {
 
 class Config {
   public:
-   Config(std::string);
+   Config(const std::filesystem::path &);
 
    std::string value(std::string key);
-   std::string get_path();
+   std::filesystem::path get_path();
 
   private:
-   std::string path;
+   std::filesystem::path path;
    std::map<std::string, std::string> config = {};
 };
 
@@ -32,7 +33,7 @@ class PaletDB {
       glm::vec3 color;
    } Color;
 
-   PaletDB(const char *);
+   PaletDB(const std::filesystem::path &path);
 
    Color color(int32_t type);
 
@@ -49,11 +50,11 @@ typedef struct {
 
 /**
  * @brief Procesa un archivo .asc y devuelve una matriz de float32.
- * @param path al archivo que se quiere prcesar.
+ * @param path al archivo que se quiere procesar.
  * @return Una matriz de ncols x nrow con el cuerpo del .asc.
  * @throws LexicalError Si se encuentra un token no válido.
  */
-Ascf loadf(const char *map);
+Ascf loadf(const std::filesystem::path &path);
 
 typedef struct {
    int cellsize;
@@ -67,7 +68,7 @@ typedef struct {
  * @return Una matriz de ncols x nrow con el cuerpo del .asc.
  * @throws LexicalError Si se encuentra un token no válido.
  */
-Asci loadi(const char *map);
+Asci loadi(const std::filesystem::path &path);
 
 typedef struct {
    std::string name;

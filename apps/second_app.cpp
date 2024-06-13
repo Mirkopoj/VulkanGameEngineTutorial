@@ -196,7 +196,7 @@ void SecondApp::run() {
    vkDeviceWaitIdle(lveDevice.device());
 }
 
-SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
+SecondApp::NewMap SecondApp::loadGameObjects(const std::filesystem::path & new_path) {
    Lexer::Config config(new_path);
    NewMap newMap;
 
@@ -205,7 +205,7 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
    auto altittude_join =
        std::async(std::launch::async, [&config, &newMap] {
           Lexer::Ascf altitudeAsc = Lexer::loadf(
-              (config.get_path() + config.value("ELEV_MAP")).c_str());
+              (config.get_path() / config.value("ELEV_MAP")).c_str());
           newMap.altittudeMap = altitudeAsc.body;
           glm::float32 min = NAN;
           for (std::vector<glm::float32>& row : newMap.altittudeMap) {
@@ -229,13 +229,13 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
       auto beginTime = std::chrono::high_resolution_clock::now();
       auto vege_join = std::async(std::launch::async, [&config] {
          Lexer::Asci vegetationAsc = Lexer::loadi(
-             (config.get_path() + config.value("VEGETATION_MAP")).c_str());
+             (config.get_path() / config.value("VEGETATION_MAP")).c_str());
          return vegetationAsc.body;
       });
       std::vector<std::vector<glm::vec3>> colorMap;
       auto paleta_join = std::async(std::launch::async, [&config] {
          Lexer::PaletDB paletDb{
-             (config.get_path() + config.value("PALETA")).c_str()};
+             (config.get_path() / config.value("PALETA")).c_str()};
          return paletDb;
       });
       std::vector<std::vector<glm::int32>> vegetationMap = vege_join.get();
@@ -263,33 +263,34 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
       auto beginTime = std::chrono::high_resolution_clock::now();
       auto dir_join = std::async(std::launch::async, [&config] {
          return Lexer::loadi(
-                    (config.get_path() + config.value("WIND_MAP")).c_str())
+                    (config.get_path() / config.value("WIND_MAP")).c_str())
              .body;
       });
       auto vel_join = std::async(std::launch::async, [&config] {
          return Lexer::loadf(
-                    (config.get_path() + config.value("INT_WIND")).c_str())
+                    (config.get_path() / config.value("INT_WIND")).c_str())
              .body;
       });
 
       std::vector<std::vector<glm::int32>> dirViento = dir_join.get();
       std::vector<std::vector<glm::float32>> velViento = vel_join.get();
       std::vector<std::vector<glm::vec2>> windSpeed;
-		float min = std::numeric_limits<float>::max();
-		float max = std::numeric_limits<float>::min();
+      float min = std::numeric_limits<float>::max();
+      float max = std::numeric_limits<float>::min();
       for (size_t y = 0; y < dirViento.size(); ++y) {
          std::vector<glm::vec2> row;
          for (size_t x = 0; x < dirViento[0].size(); ++x) {
             float angulo = dirViento[y][x] * glm::two_pi<float>() / 360.f;
             row.push_back(glm::vec2(glm::cos(angulo), glm::sin(angulo)) *
                           velViento[y][x]);
-				min = glm::min(min, velViento[y][x]);
-				max = glm::max(max, velViento[y][x]);
+            min = glm::min(min, velViento[y][x]);
+            max = glm::max(max, velViento[y][x]);
          }
          windSpeed.push_back(row);
       }
       altittude_join.wait();
-      newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed, min, max);
+      newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed, min,
+                                       max);
       auto endTime = std::chrono::high_resolution_clock::now();
       float time =
           std::chrono::duration<float, std::chrono::seconds::period>(
@@ -311,10 +312,9 @@ SecondApp::NewMap SecondApp::loadGameObjects(const char* new_path) {
    return newMap;
 }
 
-void SecondApp::asyncLoadGameObjects(const char* new_path) {
+void SecondApp::asyncLoadGameObjects(const std::filesystem::path & new_path) {
    lastTryedPath = new_path;
-   if (std::filesystem::exists(
-           std::filesystem::path(std::string(new_path) + "config.txt"))) {
+   if (std::filesystem::exists(new_path / "config.txt")) {
       loadingState = std::async(
           std::launch::async, &SecondApp::loadGameObjects, this, new_path);
       loadingTerrain = true;

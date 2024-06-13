@@ -1,8 +1,16 @@
-CFLAGS = -std=c++17 -I. -I$(VULKAN_SDK_PATH)/include 
+CFLAGS = -std=c++17 -I. -I$(VULKAN_SDK_PATH)/include \
+			-Inativefiledialog-extended/src/include \
+			$(shell pkg-config --cflags gtkmm-3.0)
 ifeq ($(DEBUG),1)
 	CFLAGS := -g3 $(CFLAGS)
 endif
-LDFLAGS = -L$(VULKAN_SDK_PATH)/lib $(shell pkgconf --static --libs glfw3) -lvulkan -limgui
+ifdef NFD
+	CFLAGS := -DNFD
+endif
+LDFLAGS = -L$(VULKAN_SDK_PATH)/lib -Lnativefiledialog-extended/build/src \
+			 $(shell pkgconf --static --libs glfw3) \
+			 $(shell pkg-config --libs gtkmm-3.0) \
+			 -lvulkan -limgui -lnfd
 
 vertSources = $(shell find ./shaders -type f -name "*.vert")
 vertObjFiles = $(patsubst %.vert, %.vert.spv, $(vertSources))
@@ -10,7 +18,7 @@ fragSources = $(shell find ./shaders -type f -name "*.frag")
 fragObjFiles = $(patsubst %.frag, %.frag.spv, $(fragSources))
 compSources = $(shell find ./shaders -type f -name "*.comp")
 compObjFiles = $(patsubst %.comp, %.comp.spv, $(compSources))
-SRCS = $(shell find -type f -name "*.cpp" -not -path "*/mains/*")
+SRCS = $(shell find -type f -name "*.cpp" -not -path "*/mains/*" -not -path "*/nativefiledialog-extended/*")
 OBJS = $(patsubst ./%.cpp, obj/%.o, $(SRCS))
 MAINOUTS = FirstApp SecondApp
 

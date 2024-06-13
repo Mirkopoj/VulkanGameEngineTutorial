@@ -2,10 +2,12 @@
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <nfd.h>
 #include <vulkan/vulkan_core.h>
 
 #include <cstdio>
 #include <set>
+#include <stdexcept>
 
 #include "../imgui/imgui_impl_glfw.h"
 #include "../imgui/imgui_impl_vulkan.h"
@@ -80,7 +82,7 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
    ImGui::RadioButton("Normal", &pipeline_i, 0);
    ImGui::SameLine();
    ImGui::RadioButton("WireFrame", &pipeline_i, 1);
-	ImGui::Checkbox("Ver viento", &viento);
+   ImGui::Checkbox("Ver viento", &viento);
    ImGui::End();
    pipeline = pipeline_i;
 
@@ -93,7 +95,16 @@ void ImGuiGui::update(lve::TerrainMovementController &cameraControler,
          ++i;
       }
       int prev = curr;
-      ImGui::InputText("current", &path);
+      if (ImGui::Button("Open new proyect")) {
+         nfdu8char_t *outPath;
+         nfdresult_t result = NFD_PickFolder(&outPath, NULL);
+         if (result == NFD_OKAY) {
+            path = outPath;
+            NFD_FreePath(outPath);
+         } else {
+            throw new std::runtime_error(NFD_GetError());
+         }
+      }
       ImGui::ListBox("recent", &curr, list, recent.size());
       if (prev != curr) {
          path = list[curr];

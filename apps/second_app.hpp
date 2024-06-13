@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <filesystem>
 #include <future>
 #include <memory>
 #include <set>
@@ -29,7 +30,7 @@ class SecondApp {
 
    void run();
 
-   void asyncLoadGameObjects(const char *);
+   void asyncLoadGameObjects(const std::filesystem::path &);
 
    struct NewMap {
       uint32_t yn;
@@ -57,8 +58,8 @@ class SecondApp {
            .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
            .build();
 
-   std::string path = "";
-   std::string lastTryedPath = "";
+   std::filesystem::path path{""};
+   std::filesystem::path lastTryedPath{""};
 
    std::unique_ptr<LveTerrain> terrain = nullptr;
    std::unique_ptr<LveWind> wind = nullptr;
@@ -73,7 +74,7 @@ class SecondApp {
    std::future<NewMap> loadingState;
    bool loadingTerrain = false;
 
-   NewMap loadGameObjects(const char *);
+   NewMap loadGameObjects(const std::filesystem::path &);
 
    void fixViewer(LveGameObject &, float);
 };

@@ -10,8 +10,8 @@
 
 namespace Lexer {
 
-Config::Config(std::string path) : path(path) {
-   std::ifstream ifile(path + "config.txt");
+Config::Config(const std::filesystem::path &path) : path(path) {
+   std::ifstream ifile(path / "config.txt");
    char key[255];
    char value[255];
    for (std::string line; std::getline(ifile, line);) {
@@ -25,11 +25,11 @@ std::string Config::value(std::string key) {
    return config[key];
 }
 
-std::string Config::get_path() {
+std::filesystem::path Config::get_path() {
    return path;
 }
 
-PaletDB::PaletDB(const char *path) {
+PaletDB::PaletDB(const std::filesystem::path &path) {
    std::ifstream ifile(path);
    int32_t type;
    uint32_t id;
@@ -54,7 +54,7 @@ PaletDB::Color PaletDB::color(int32_t type) {
    return layer[id];
 }
 
-Ascf loadf(const char *path) {
+Ascf loadf(const std::filesystem::path &path) {
    std::ifstream ifile(path);
    int32_t NODATA_value;
    int cellsize;
@@ -99,7 +99,7 @@ Ascf loadf(const char *path) {
    };
 }
 
-Asci loadi(const char *path) {
+Asci loadi(const std::filesystem::path &path) {
    std::ifstream ifile(path);
    int32_t NODATA_value;
    int cellsize;

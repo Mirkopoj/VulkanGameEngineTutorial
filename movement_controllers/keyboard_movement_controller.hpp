@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "lve/lve_game_object.hpp"
+#include "../lve/lve_game_object.hpp"
 
 namespace lve {
 
