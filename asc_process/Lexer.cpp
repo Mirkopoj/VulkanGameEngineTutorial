@@ -34,17 +34,21 @@ PaletDB::PaletDB(const std::filesystem::path &path) {
    int32_t type;
    uint32_t id;
    char name[255];
-   float r;
-   float g;
-   float b;
+   int r;
+   int g;
+   int b;
    for (std::string line; std::getline(ifile, line);) {
       if (sscanf(line.c_str(), "R%d=%d", &id, &type)) {
          types[type] = id;
       }
-      if (sscanf(line.c_str(), "I%d=\"%[^\"]\",%f,%f,%f", &id, name, &r,
+      if (sscanf(line.c_str(), "I%d=\"%[^\"]\",%d,%d,%d", &id, name, &r,
                  &g, &b)) {
          layer[id] = Color{.name = name,
-                           .color = glm::vec3{r / 255, g / 255, b / 255}};
+                           .color = glm::vec3{
+										static_cast<float>(r) / 255.f,
+										static_cast<float>(g) / 255.f,
+										static_cast<float>(b) / 255.f
+									}};
       }
    }
 }
