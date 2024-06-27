@@ -30,6 +30,7 @@
 #include "../lve/lve_device.hpp"
 #include "../lve/lve_swap_chain.hpp"
 #include "../lve/lve_terrain.hpp"
+#include "../lve/colormaps.hpp"
 #include "../movement_controllers/terrain_movement_controller.hpp"
 #include "../systems/gui_system.hpp"
 #include "../systems/terrain_render_system.hpp"
@@ -153,7 +154,7 @@ void SecondApp::run() {
          myimgui.update(cameraController, caminata, new_path, maps, curr,
                         loadingTerrain, pipeline,
                         viewerObject.transform.translation, viento,
-                        paleta_elegida, paletas_s);
+                        paleta_elegida, colormap::paletas());
 
          // render system
          lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -298,7 +299,7 @@ SecondApp::NewMap SecondApp::loadGameObjects(
       }
       altittude_join.wait();
       newMap.wind_builder.generateMesh(newMap.altittudeMap, windSpeed, min,
-                                       max, paletas[paleta_viento]);
+                                       max, paleta_viento);
       auto endTime = std::chrono::high_resolution_clock::now();
       float time =
           std::chrono::duration<float, std::chrono::seconds::period>(

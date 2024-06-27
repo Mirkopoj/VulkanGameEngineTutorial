@@ -13,7 +13,8 @@
 #include <memory>
 #include <vector>
 
-#include "cppcolormap.hpp"
+// #include "cppcolormap.hpp"
+#include "colormaps.hpp"
 #include "lve_buffer.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -35,7 +36,7 @@ std::unique_ptr<LveWind> LveWind::createModelFromMesh(
     LveDevice &device,
     const std::vector<std::vector<glm::float32>> &alttitudeMap,
     const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
-    float max, const char *paleta) {
+    float max, const size_t paleta) {
    Builder builder{};
    builder.generateMesh(alttitudeMap, wind_speed, min, max, paleta);
 
@@ -143,7 +144,7 @@ LveWind::Vertex::getAttributeDescriptions() {
 void LveWind::Builder::generateMesh(
     const std::vector<std::vector<glm::float32>> &alttitudeMap,
     const std::vector<std::vector<glm::vec2>> &wind_speed, float min,
-    float max, const char *paleta) {
+    float max, const size_t paleta) {
    vertices.clear();
    indices.clear();
 
@@ -167,12 +168,12 @@ void LveWind::Builder::generateMesh(
 
    const size_t max_samples = 10000;
 
-   auto colormap = cppcolormap::colormap(paleta);
+   colormap::colormap_t *color_map = colormap::colormap(paleta);
    std::vector<std::future<void>> line_joins;
    for (std::vector<Vertex> &line : lines) {
       line_joins.push_back(std::async(
           std::launch::async, [&line, xn, yn, &alttitudeMap, &wind_speed,
-                               min, spread, &colormap] {
+                               min, spread, color_map] {
              bool adentro = true;
              while (adentro && line.size() < max_samples) {
                 Vertex &vertex = line.back();
@@ -226,22 +227,16 @@ void LveWind::Builder::generateMesh(
 
                 float amount = glm::length(moveDir);
                 float norm_amount = ((amount - min) / spread);
-                size_t last = colormap.shape()[0] - 1;
+                size_t last = colormap::color_points - 1;
                 float color_index = last * norm_amount;
                 size_t floor = floorf(color_index);
                 if (floor == last) {
-                   vertex.color =
-                       glm::vec3{colormap(last, 0), colormap(last, 1),
-                                 colormap(last, 2)};
+                   vertex.color = (*color_map)[last];
                 } else {
                    size_t ceil = ceilf(color_index);
                    float frac = glm::fract(color_index);
-                   auto floor_color =
-                       glm::vec3{colormap(floor, 0), colormap(floor, 1),
-                                 colormap(floor, 2)};
-                   auto ceil_color =
-                       glm::vec3{colormap(ceil, 0), colormap(ceil, 1),
-                                 colormap(ceil, 2)};
+                   auto floor_color = (*color_map)[floor];
+                   auto ceil_color = (*color_map)[ceil];
                    vertex.color =
                        ceil_color * frac + floor_color * (1.f - frac);
                 }
