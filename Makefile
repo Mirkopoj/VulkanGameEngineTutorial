@@ -1,5 +1,6 @@
 CFLAGS = -std=c++17 -I. -I$(VULKAN_SDK_PATH)/include \
 			-Inativefiledialog-extended/src/include \
+			-Iimgui/ \
 			$(shell pkg-config --cflags gtkmm-3.0)
 ifeq ($(DEBUG),1)
 	CFLAGS := -g3 $(CFLAGS)
@@ -10,7 +11,7 @@ endif
 LDFLAGS = -L$(VULKAN_SDK_PATH)/lib -Lnativefiledialog-extended/build/src \
 			 $(shell pkgconf --static --libs glfw3) \
 			 $(shell pkg-config --libs gtkmm-3.0) \
-			 -lvulkan -limgui -lnfd
+			 -lvulkan -lnfd
 
 vertSources = $(shell find ./shaders -type f -name "*.vert")
 vertObjFiles = $(patsubst %.vert, %.vert.spv, $(vertSources))

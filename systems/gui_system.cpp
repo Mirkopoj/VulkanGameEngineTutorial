@@ -1,7 +1,7 @@
 #include "gui_system.hpp"
 
 #include <imgui.h>
-#include <imgui_stdlib.h>
+#include <imgui/misc/cpp/imgui_stdlib.h>
 #include <nfd.h>
 #include <vulkan/vulkan_core.h>
 
@@ -9,9 +9,9 @@
 #include <set>
 #include <stdexcept>
 
-#include "../imgui/imgui_impl_glfw.h"
-#include "../imgui/imgui_impl_vulkan.h"
-#include "../lve/lve_renderer.hpp"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
+#include "lve/lve_renderer.hpp"
 
 const char *vk_result_to_c_string(VkResult result);
 
@@ -34,17 +34,16 @@ ImGuiGui::ImGuiGui(GLFWwindow *window, lve::LveDevice &lveDevice,
    info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
    info.Allocator = nullptr;
    info.CheckVkResultFn = check_vk_result;
+	info.RenderPass = lveRenderer.getSwapChainRenderPass();
 
    IMGUI_CHECKVERSION();
    ImGui::CreateContext();
    ImGuiIO &io = ImGui::GetIO();
    io.Fonts->AddFontDefault();
    ImGui_ImplGlfw_InitForVulkan(window, true);
-   ImGui_ImplVulkan_Init(&info, lveRenderer.getSwapChainRenderPass());
-   VkCommandBuffer commandBuffer = lveDevice.beginSingleTimeCommands();
-   ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-   lveDevice.endSingleTimeCommands(commandBuffer);
-   ImGui_ImplVulkan_DestroyFontUploadObjects();
+   ImGui_ImplVulkan_Init(&info);
+   ImGui_ImplVulkan_CreateFontsTexture();
+   ImGui_ImplVulkan_DestroyFontsTexture();
    ImGui::StyleColorsDark();
 }
 
